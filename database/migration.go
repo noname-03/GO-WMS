@@ -8,7 +8,7 @@ import (
 func Migrate() error {
     log.Println("Starting database migration...")
     
-    err := DB.AutoMigrate(&model.User{})
+    err := DB.AutoMigrate(&model.User{}, &model.Role{})
     if err != nil {
         log.Println("Migration failed:", err)
         return err

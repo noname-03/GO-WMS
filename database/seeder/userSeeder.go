@@ -9,7 +9,7 @@ import (
 
 type UserSeeder struct{}
 
-func NewUserSeeder() *UserSeeder {
+func NewUserSeeder() SeederInterface {
 	return &UserSeeder{}
 }
 

@@ -4,6 +4,7 @@ import (
     "github.com/gofiber/fiber/v2"
     "myapp/internal/routes/v1/auth"
     "myapp/internal/routes/v1/user"
+    "myapp/internal/routes/v1/role"
     // Import modules lain di sini untuk future development
     // "myapp/internal/routes/v1/product"
     // "myapp/internal/routes/v1/order"
@@ -17,6 +18,7 @@ func SetupV1Routes(app *fiber.App) {
     // Setup module routes
     auth.SetupAuthRoutes(v1)
     user.SetupUserRoutes(v1)
+	role.SetupRoleRoutes(v1)
     
     // Future modules
     // product.SetupProductRoutes(v1)

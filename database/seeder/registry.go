@@ -12,6 +12,7 @@ func GetAllSeeders() *SeederRegistry {
 	// Register all seeders here
 	// Add new seeders to this list to auto-run them
 	registry.Register(NewUserSeeder())
+	registry.Register(NewRoleSeeder())
 	// registry.Register(NewProductSeeder())
 	// registry.Register(NewWarehouseSeeder())
 	
