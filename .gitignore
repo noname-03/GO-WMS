@@ -1,0 +1,163 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Dependency directories (remove the comment below to include it)
+# vendor/
+
+# Go workspace file
+go.work
+
+# Build artifacts
+/build/
+/dist/
+/bin/
+*.bin
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.*.local
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Log files
+*.log
+logs/
+/logs/
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Temporary folders
+tmp/
+temp/
+/tmp/
+/temp/
+
+# Docker
+.dockerignore
+Dockerfile.dev
+docker-compose.override.yml
+docker-compose.dev.yml
+
+# Air (Go live reload)
+.air.toml
+tmp/
+
+# Documentation
+docs/build/
+
+# Cache directories
+.cache/
+.parcel-cache/
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+# Local configuration files
+config.local.json
+config.local.yaml
+config.local.yml
+
+# SSL certificates (if stored locally)
+*.pem
+*.key
+*.crt
+*.csr
+
+# Database dumps
+*.sql.gz
+*.dump
+
+# Performance monitoring
+*.prof
+
+# Kubernetes manifests with secrets
+*secret*.yaml
+*secret*.yml
+
+# Terraform
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+
+# Local development scripts
+scripts/dev/
+scripts/local/
+
+# Project specific
+/uploads/
+/storage/
+/public/uploads/
+
+# Migration files with sensitive data
+migrations/*_sensitive_*
+
+# Vendor directory (if using dep or older Go versions)
+vendor/
+
+# Go module cache (ONLY ignore build cache, NOT project pkg/)
+# pkg/ should NOT be ignored as it contains public library code
+
+# Test results
+test-results/
+coverage.xml
+coverage.html
+
+# Benchmarks
+*.bench

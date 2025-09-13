@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   app:
-    image: golang:1.22-alpine   # Go LTS (1.22)
+    image: golang:1.23-alpine   # Go LTS (1.22)
     container_name: go-app
     working_dir: /app
     volumes:
