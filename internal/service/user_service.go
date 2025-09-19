@@ -1,6 +1,7 @@
 package service
 
 import (
+	"log"
 	"errors"
 	"myapp/internal/model"
 	"myapp/internal/repository"
@@ -39,11 +40,16 @@ func (s *UserService) GetUserByID(id uint) (*model.User, error) {
 
 func (s *UserService) CreateUser(name, email, password string) (*model.User, error) {
 	// Check if user exists
-	existingUser, _ := s.userRepo.GetUserByEmail(email)
-	if existingUser != nil {
+	existingUser, err := s.userRepo.GetUserByEmail(email)
+	log.Printf("GetUserByEmail result - User: %+v, Error: %v", existingUser, err)
+	
+	if existingUser != nil && existingUser.ID != 0 {
+		log.Printf("User already exists with ID: %d", existingUser.ID)
 		return nil, errors.New("user already exists")
 	}
-
+	
+	log.Println("User does not exist, creating new user...")
+	
 	// Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -51,16 +57,19 @@ func (s *UserService) CreateUser(name, email, password string) (*model.User, err
 	}
 
 	user := &model.User{
-		Name:     name,
-		Email:    email,
-		Password: string(hashedPassword),
+		Name:       name,
+		Email:      email,
+		Password:   string(hashedPassword),
+		Acusername: "System",
 	}
 
 	err = s.userRepo.CreateUser(user)
 	if err != nil {
+		log.Printf("Error creating user: %v", err)
 		return nil, err
 	}
 
+	log.Printf("User created successfully with ID: %d", user.ID)
 	return user, nil
 }
 

@@ -1,8 +1,11 @@
 package repository
 
 import (
+	"errors"
+	"log"
 	"myapp/database"
 	"myapp/internal/model"
+	"gorm.io/gorm"
 )
 
 type UserRepository struct{}
@@ -34,12 +37,22 @@ func (r *UserRepository) GetUserByID(id uint) (*model.User, error) {
 }
 
 func (r *UserRepository) GetUserByEmail(email string) (*model.User, error) {
-	var user model.User
-	result := database.DB.Where("email = ?", email).First(&user)
-	if result.Error != nil {
-		return nil, result.Error
-	}
-	return &user, nil
+    var user model.User
+    result := database.DB.Where("email = ?", email).First(&user)
+    log.Printf("GetUserByEmail query - Email: %s, Result: %+v, Error: %v, RowsAffected: %d", 
+               email, user, result.Error, result.RowsAffected)
+    
+    if result.Error != nil {
+        if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+            log.Printf("User with email %s not found", email)
+            return nil, nil // Tidak ditemukan
+        }
+        log.Printf("Database error: %v", result.Error)
+        return nil, result.Error
+    }
+    
+    log.Printf("User found with ID: %d", user.ID)
+    return &user, nil
 }
 
 func (r *UserRepository) CreateUser(user *model.User) error {

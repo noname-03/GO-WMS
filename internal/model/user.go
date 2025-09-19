@@ -7,4 +7,5 @@ type User struct {
     Name     string `json:"name"`
     Email    string `json:"email" gorm:"unique"`
     Password string `json:"-"` // "-" means don't include in JSON response
+    Acusername string `json:"acusername"`
 }

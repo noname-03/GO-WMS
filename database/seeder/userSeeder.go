@@ -41,26 +41,13 @@ func (s *UserSeeder) Seed(db *gorm.DB) error {
 			Name:     "Admin User",
 			Email:    "admin@wms.com",
 			Password: string(hashedPassword),
+			Acusername: "system",
 		},
 		{
-			Name:     "Alice Johnson",
-			Email:    "alice@mail.com",
+			Name:     "User",
+			Email:    "user@wms.com",
 			Password: string(hashedPassword),
-		},
-		{
-			Name:     "Bob Smith",
-			Email:    "bob@mail.com",
-			Password: string(hashedPassword),
-		},
-		{
-			Name:     "Charlie Brown",
-			Email:    "charlie@mail.com",
-			Password: string(hashedPassword),
-		},
-		{
-			Name:     "Diana Prince",
-			Email:    "diana@mail.com",
-			Password: string(hashedPassword),
+			Acusername: "system",
 		},
 	}
 

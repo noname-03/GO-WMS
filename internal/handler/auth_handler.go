@@ -22,6 +22,17 @@ type RegisterRequest struct {
 	Password string `json:"password" validate:"required,min=6"`
 }
 
+type UserResponse struct {
+	ID    uint   `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
+type RegisterResponse struct {
+	Token string       `json:"token"`
+	User  UserResponse `json:"user"`
+}
+
 func Login(c *fiber.Ctx) error {
 	var req LoginRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -57,7 +68,7 @@ func Register(c *fiber.Ctx) error {
 		return helper.Fail(c, 400, "Invalid request body", err.Error())
 	}
 
-	// Use service instead of direct database access
+	// Use service instead of direct database access 
 	user, err := authUserService.CreateUser(req.Name, req.Email, req.Password)
 	if err != nil {
 		return helper.Fail(c, 409, "Registration failed", err.Error())
@@ -70,6 +81,7 @@ func Register(c *fiber.Ctx) error {
 		return helper.Fail(c, 500, "Failed to generate token", err.Error())
 	}
 
+	log.Println("token",token)
 	return helper.Success(c, 201, "User created successfully", fiber.Map{
 		"token": token,
 		"user": fiber.Map{
