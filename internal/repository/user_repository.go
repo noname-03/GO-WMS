@@ -38,7 +38,8 @@ func (r *UserRepository) GetUserByID(id uint) (*model.User, error) {
 
 func (r *UserRepository) GetUserByEmail(email string) (*model.User, error) {
     var user model.User
-    result := database.DB.Where("email = ?", email).First(&user)
+	query := "SELECT * FROM users WHERE email = ?"
+	result := database.DB.Raw(query, email).Scan(&user)
     log.Printf("GetUserByEmail query - Email: %s, Result: %+v, Error: %v, RowsAffected: %d", 
                email, user, result.Error, result.RowsAffected)
     
