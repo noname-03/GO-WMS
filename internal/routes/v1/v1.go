@@ -3,6 +3,7 @@ package v1
 import (
 	"myapp/internal/routes/v1/auth"
 	"myapp/internal/routes/v1/brand"
+	"myapp/internal/routes/v1/category"
 	"myapp/internal/routes/v1/role"
 	"myapp/internal/routes/v1/user"
 
@@ -22,6 +23,7 @@ func SetupV1Routes(app *fiber.App) {
 	user.SetupUserRoutes(v1)
 	role.SetupRoleRoutes(v1)
 	brand.SetupBrandRoutes(v1)
+	category.SetupCategoryRoutes(v1)
 
 	// Future modules
 	// product.SetupProductRoutes(v1)

@@ -15,6 +15,7 @@ func GetAllSeeders() *SeederRegistry {
 	registry.Register(NewUserSeeder())
 	registry.Register(NewRoleSeeder())
 	registry.Register(NewBrandSeeder())
+	registry.Register(NewCategorySeeder())
 	// registry.Register(NewProductSeeder())
 	// registry.Register(NewWarehouseSeeder())
 
