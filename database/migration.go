@@ -1,19 +1,19 @@
 package database
 
 import (
-    "myapp/internal/model"
-    "log"
+	"log"
+	"myapp/internal/model"
 )
 
 func Migrate() error {
-    log.Println("Starting database migration...")
-    
-    err := DB.AutoMigrate(&model.User{}, &model.Role{})
-    if err != nil {
-        log.Println("Migration failed:", err)
-        return err
-    }
-    
-    log.Println("Migration completed successfully!")
-    return nil
+	log.Println("Starting database migration...")
+
+	err := DB.AutoMigrate(&model.User{}, &model.Role{}, &model.Brand{})
+	if err != nil {
+		log.Println("Migration failed:", err)
+		return err
+	}
+
+	log.Println("Migration completed successfully!")
+	return nil
 }
