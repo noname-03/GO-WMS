@@ -8,12 +8,14 @@ import (
 )
 
 type ProductBatchService struct {
-	batchRepo *repository.ProductBatchRepository
+	batchRepo    *repository.ProductBatchRepository
+	trackService *ProductBatchTrackService
 }
 
 func NewProductBatchService() *ProductBatchService {
 	return &ProductBatchService{
-		batchRepo: repository.NewProductBatchRepository(),
+		batchRepo:    repository.NewProductBatchRepository(),
+		trackService: NewProductBatchTrackService(),
 	}
 }
 
@@ -91,6 +93,14 @@ func (s *ProductBatchService) CreateProductBatch(productID uint, codeBatch *stri
 		return nil, err
 	}
 
+	// Create tracking record for creation
+	err = s.trackService.TrackCreate(createdBatch, userID)
+	if err != nil {
+		// Log error but don't fail the creation
+		// Consider using a logger here
+		// log.Printf("Failed to create tracking record: %v", err)
+	}
+
 	return &createdBatch, nil
 }
 
@@ -104,13 +114,13 @@ func (s *ProductBatchService) UpdateProductBatch(id uint, productID uint, codeBa
 	}
 
 	// Check if batch exists
-	batch, err := s.batchRepo.GetProductBatchByID(id)
+	oldBatch, err := s.batchRepo.GetProductBatchByID(id)
 	if err != nil {
 		return nil, errors.New("product batch not found")
 	}
 
 	// If product ID is being changed, check if new product exists
-	if productID != 0 && productID != batch.ProductID {
+	if productID != 0 && productID != oldBatch.ProductID {
 		productExists, err := s.batchRepo.CheckProductExists(productID)
 		if err != nil {
 			return nil, err
@@ -122,12 +132,12 @@ func (s *ProductBatchService) UpdateProductBatch(id uint, productID uint, codeBa
 
 	// Use existing product if not provided
 	if productID == 0 {
-		productID = batch.ProductID
+		productID = oldBatch.ProductID
 	}
 
 	// Prepare update data with audit trail
 	updateData := make(map[string]interface{})
-	if productID != batch.ProductID {
+	if productID != oldBatch.ProductID {
 		updateData["product_id"] = productID
 	}
 	if codeBatch != nil {
@@ -150,10 +160,19 @@ func (s *ProductBatchService) UpdateProductBatch(id uint, productID uint, codeBa
 		return nil, err
 	}
 
+	// Create tracking record for update using actual changes
+	err = s.trackService.TrackUpdateFromChanges(updateData, oldBatch, userID)
+	if err != nil {
+		// Log error but don't fail the update
+		// Consider using a logger here
+		// log.Printf("Failed to create tracking record: %v", err)
+	}
+
 	updatedBatch, err := s.batchRepo.GetProductBatchByID(id)
 	if err != nil {
 		return nil, err
 	}
+
 	return &updatedBatch, nil
 }
 
@@ -167,9 +186,17 @@ func (s *ProductBatchService) DeleteProductBatch(id uint, userID uint) error {
 	}
 
 	// Check if batch exists
-	_, err := s.batchRepo.GetProductBatchByID(id)
+	batchToDelete, err := s.batchRepo.GetProductBatchByID(id)
 	if err != nil {
 		return errors.New("product batch not found")
+	}
+
+	// Create tracking record for deletion (before actual deletion)
+	err = s.trackService.TrackDelete(batchToDelete, userID)
+	if err != nil {
+		// Log error but don't fail the deletion
+		// Consider using a logger here
+		// log.Printf("Failed to create tracking record: %v", err)
 	}
 
 	return s.batchRepo.DeleteProductBatchWithAudit(id, userID)
