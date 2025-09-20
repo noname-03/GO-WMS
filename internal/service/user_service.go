@@ -1,10 +1,11 @@
 package service
 
 import (
-	"log"
 	"errors"
+	"log"
 	"myapp/internal/model"
 	"myapp/internal/repository"
+
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -39,17 +40,19 @@ func (s *UserService) GetUserByID(id uint) (*model.User, error) {
 }
 
 func (s *UserService) CreateUser(name, email, password string) (*model.User, error) {
-	// Check if user exists
-	existingUser, err := s.userRepo.GetUserByEmail(email)
-	log.Printf("GetUserByEmail result - User: %+v, Error: %v", existingUser, err)
-	
-	if existingUser != nil && existingUser.ID != 0 {
-		log.Printf("User already exists with ID: %d", existingUser.ID)
-		return nil, errors.New("user already exists")
+	// Check if email already exists using the new method
+	exists, err := s.userRepo.CheckEmailExists(email, 0)
+	if err != nil {
+		log.Printf("Error checking email existence: %v", err)
+		return nil, err
 	}
-	
-	log.Println("User does not exist, creating new user...")
-	
+	if exists {
+		log.Printf("Email already exists: %s", email)
+		return nil, errors.New("email already exists")
+	}
+
+	log.Printf("Email is available, creating new user for: %s", email)
+
 	// Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -57,10 +60,9 @@ func (s *UserService) CreateUser(name, email, password string) (*model.User, err
 	}
 
 	user := &model.User{
-		Name:       name,
-		Email:      email,
-		Password:   string(hashedPassword),
-		Acusername: "System",
+		Name:     name,
+		Email:    email,
+		Password: string(hashedPassword),
 	}
 
 	err = s.userRepo.CreateUser(user)

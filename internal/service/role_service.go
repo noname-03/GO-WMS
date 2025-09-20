@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"log"
 	"myapp/internal/model"
 	"myapp/internal/repository"
 )
@@ -29,13 +30,17 @@ func (s *RoleService) GetRoleByID(id uint) (*model.Role, error) {
 	return &role, nil
 }
 
-func (s *RoleService) CreateRole(name, description string) (*model.Role, error) {
+func (s *RoleService) CreateRole(name, description string, userID uint) (*model.Role, error) {
 	if name == "" {
 		return nil, errors.New("role name is required")
 	}
-	
+
+	if userID == 0 {
+		return nil, errors.New("user ID is required for audit trail")
+	}
+
 	// Check if role exists
-	exists, err := s.roleRepo.CheckRoleExists(name, 0)
+	exists, err := s.roleRepo.CheckRoleExists(name)
 	if err != nil {
 		return nil, err
 	}
@@ -46,15 +51,20 @@ func (s *RoleService) CreateRole(name, description string) (*model.Role, error) 
 	role := &model.Role{
 		Name:        name,
 		Description: description,
+		UserIns:     &userID, // Set pointer to userID
 	}
 
 	err = s.roleRepo.CreateRole(role)
 	return role, err
 }
 
-func (s *RoleService) UpdateRole(id uint, name, description string) (*model.Role, error) {
+func (s *RoleService) UpdateRole(id uint, name, description string, userID uint) (*model.Role, error) {
 	if id == 0 {
 		return nil, errors.New("invalid role ID")
+	}
+
+	if userID == 0 {
+		return nil, errors.New("user ID is required for audit trail")
 	}
 
 	// Check if role exists
@@ -65,16 +75,17 @@ func (s *RoleService) UpdateRole(id uint, name, description string) (*model.Role
 
 	// Check if new name conflicts with existing roles
 	if name != "" && name != role.Name {
-		exists, err := s.roleRepo.CheckRoleExists(name, id)
+		exists, err := s.roleRepo.CheckRoleExists(name)
 		if err != nil {
 			return nil, err
 		}
+		log.Println("cek status", exists)
 		if exists {
 			return nil, errors.New("role name already in use")
 		}
 	}
 
-	// Prepare update data
+	// Prepare update data with audit trail
 	updateData := make(map[string]interface{})
 	if name != "" {
 		updateData["name"] = name
@@ -82,6 +93,8 @@ func (s *RoleService) UpdateRole(id uint, name, description string) (*model.Role
 	if description != "" {
 		updateData["description"] = description
 	}
+	// Always set the user who updated
+	updateData["user_updt"] = userID
 
 	err = s.roleRepo.UpdateRole(id, updateData)
 	if err != nil {
@@ -95,16 +108,20 @@ func (s *RoleService) UpdateRole(id uint, name, description string) (*model.Role
 	return &updatedRole, nil
 }
 
-func (s *RoleService) DeleteRole(id uint) error {
+func (s *RoleService) DeleteRole(id uint, userID uint) error {
 	if id == 0 {
 		return errors.New("invalid role ID")
 	}
-	
+
+	if userID == 0 {
+		return errors.New("user ID is required for audit trail")
+	}
+
 	// Check if role exists
 	_, err := s.roleRepo.GetRoleByID(id)
 	if err != nil {
 		return errors.New("role not found")
 	}
 
-	return s.roleRepo.DeleteRole(id)
+	return s.roleRepo.DeleteRoleWithAudit(id, userID)
 }
