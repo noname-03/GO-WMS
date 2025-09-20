@@ -93,7 +93,7 @@ docker-compose.override.yml
 docker-compose.dev.yml
 
 # Air (Go live reload)
-.air.toml
+# .air.toml  # Keep this for sharing Air configuration
 tmp/
 
 # Documentation
