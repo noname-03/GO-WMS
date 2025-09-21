@@ -108,7 +108,7 @@ func CreateBrand(c *fiber.Ctx) error {
 	}
 
 	log.Printf("[BRAND] Create brand successful - Brand ID: %d, Name: %s, Created by User ID: %d", brand.ID, brand.Name, userID)
-	return helper.Success(c, 201, "Brand created successfully", brand)
+	return helper.Success(c, 200, "Brand created successfully", brand)
 }
 
 func UpdateBrand(c *fiber.Ctx) error {
