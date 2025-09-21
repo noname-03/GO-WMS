@@ -1,5 +1,4 @@
 # 🗃️ Database Documentation
-
 Comprehensive database schema, operations, and management guide for GO-WMS.
 
 ## 📊 Database Schema Overview
