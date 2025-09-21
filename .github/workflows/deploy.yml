@@ -1,0 +1,32 @@
+name: Deploy to Hosting
+
+on:
+  push:
+    branches:
+      - production
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Deploy to Hosting via SSH
+      uses: appleboy/ssh-action@v0.1.10
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_KEY }}
+        port: ${{ secrets.SSH_PORT }}
+        script: |
+          cd public_html/GO-WMS
+          # Kill any running main process
+          pkill -f ./main || true
+          # Pull latest code
+          git pull origin production
+          # Build main.go
+          go build -o main main.go
+          # Start with nohup
+          nohup ./main &
