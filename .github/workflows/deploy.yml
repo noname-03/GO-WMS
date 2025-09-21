@@ -22,11 +22,7 @@ jobs:
         port: ${{ secrets.SSH_PORT }}
         script: |
           cd public_html/GO-WMS
-          # Kill any running main process
           pkill -f ./main || true
-          # Pull latest code
           git pull origin production
-          # Build main.go
           go build -o main main.go
-          # Start with nohup
           nohup ./main &
