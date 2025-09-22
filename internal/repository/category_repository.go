@@ -17,9 +17,22 @@ func (r *CategoryRepository) GetAllCategories() ([]model.Category, error) {
 	return categories, result.Error
 }
 
-func (r *CategoryRepository) GetCategoriesByBrand(brandID uint) ([]model.Category, error) {
-	var categories []model.Category
-	result := database.DB.Preload("Brand").Where("brand_id = ?", brandID).Find(&categories)
+// categoryBasicResponse struct untuk GetCategoriesByBrand tanpa relasi Brand
+type categoryBasicResponse struct {
+	ID          uint    `json:"id"`
+	BrandID     uint    `json:"brandId"`
+	Name        string  `json:"name"`
+	Description *string `json:"description"`
+}
+
+func (r *CategoryRepository) GetCategoriesByBrand(brandID uint) ([]categoryBasicResponse, error) {
+	var categories []categoryBasicResponse
+
+	result := database.DB.Table("categories").
+		Select("id, brand_id, name, description").
+		Where("brand_id = ? AND deleted_at IS NULL", brandID).
+		Find(&categories)
+
 	return categories, result.Error
 }
 

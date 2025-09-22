@@ -88,7 +88,7 @@ func GetCategoriesByBrand(c *fiber.Ctx) error {
 		return helper.Fail(c, statusCode, message, err.Error())
 	}
 
-	log.Printf("[CATEGORY] Get categories by brand successful - Brand ID: %d, Found %d categories", brandIDUint, len(categories))
+	log.Printf("[CATEGORY] Get categories by brand successful - Brand ID: %d", brandIDUint)
 	return helper.Success(c, 200, "Success", categories)
 }
 

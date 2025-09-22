@@ -21,7 +21,7 @@ func (s *CategoryService) GetAllCategories() ([]model.Category, error) {
 	return s.categoryRepo.GetAllCategories()
 }
 
-func (s *CategoryService) GetCategoriesByBrand(brandID uint) ([]model.Category, error) {
+func (s *CategoryService) GetCategoriesByBrand(brandID uint) (interface{}, error) {
 	if brandID == 0 {
 		return nil, errors.New("invalid brand ID")
 	}
@@ -94,7 +94,7 @@ func (s *CategoryService) CreateCategory(brandID uint, name string, description 
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &createdCategory, nil
 }
 
