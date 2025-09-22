@@ -67,7 +67,7 @@ func GetCategories(c *fiber.Ctx) error {
 		return helper.Fail(c, 500, "Failed to fetch categories", err.Error())
 	}
 
-	log.Printf("[CATEGORY] Get all categories successful - Found %d categories", len(categories))
+	log.Printf("[CATEGORY] Get all categories successful")
 	return helper.Success(c, 200, "Success", categories)
 }
 

@@ -7,22 +7,28 @@ import (
 
 type CategoryRepository struct{}
 
-func NewCategoryRepository() *CategoryRepository {
-	return &CategoryRepository{}
-}
-
-func (r *CategoryRepository) GetAllCategories() ([]model.Category, error) {
-	var categories []model.Category
-	result := database.DB.Preload("Brand").Find(&categories)
-	return categories, result.Error
-}
-
 // categoryBasicResponse struct untuk GetCategoriesByBrand tanpa relasi Brand
 type categoryBasicResponse struct {
 	ID          uint    `json:"id"`
 	BrandID     uint    `json:"brandId"`
 	Name        string  `json:"name"`
 	Description *string `json:"description"`
+}
+
+func NewCategoryRepository() *CategoryRepository {
+	return &CategoryRepository{}
+}
+
+func (r *CategoryRepository) GetAllCategories() ([]categoryBasicResponse, error) {
+	var categories []categoryBasicResponse
+
+	result := database.DB.Table("categories").
+		Select("id, brand_id, name, description").
+		Where("deleted_at IS NULL").
+		Order("name ASC").
+		Find(&categories)
+
+	return categories, result.Error
 }
 
 func (r *CategoryRepository) GetCategoriesByBrand(brandID uint) ([]categoryBasicResponse, error) {

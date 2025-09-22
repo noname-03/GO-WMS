@@ -17,7 +17,7 @@ func NewCategoryService() *CategoryService {
 }
 
 // Business logic methods
-func (s *CategoryService) GetAllCategories() ([]model.Category, error) {
+func (s *CategoryService) GetAllCategories() (interface{}, error) {
 	return s.categoryRepo.GetAllCategories()
 }
 
