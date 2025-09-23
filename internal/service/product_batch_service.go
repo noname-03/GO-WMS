@@ -20,11 +20,11 @@ func NewProductBatchService() *ProductBatchService {
 }
 
 // Business logic methods
-func (s *ProductBatchService) GetAllProductBatches() ([]model.ProductBatch, error) {
+func (s *ProductBatchService) GetAllProductBatches() (interface{}, error) {
 	return s.batchRepo.GetAllProductBatches()
 }
 
-func (s *ProductBatchService) GetProductBatchesByProduct(productID uint) ([]model.ProductBatch, error) {
+func (s *ProductBatchService) GetProductBatchesByProduct(productID uint) (interface{}, error) {
 	if productID == 0 {
 		return nil, errors.New("invalid product ID")
 	}
@@ -41,15 +41,15 @@ func (s *ProductBatchService) GetProductBatchesByProduct(productID uint) ([]mode
 	return s.batchRepo.GetProductBatchesByProduct(productID)
 }
 
-func (s *ProductBatchService) GetProductBatchByID(id uint) (*model.ProductBatch, error) {
+func (s *ProductBatchService) GetProductBatchByID(id uint) (interface{}, error) {
 	batch, err := s.batchRepo.GetProductBatchByID(id)
 	if err != nil {
 		return nil, err
 	}
-	return &batch, nil
+	return batch, nil
 }
 
-func (s *ProductBatchService) CreateProductBatch(productID uint, codeBatch *string, unitPrice *float64, expDate time.Time, description *string, userID uint) (*model.ProductBatch, error) {
+func (s *ProductBatchService) CreateProductBatch(productID uint, codeBatch *string, unitPrice *float64, expDate time.Time, description *string, userID uint) (interface{}, error) {
 	if productID == 0 {
 		return nil, errors.New("product ID is required")
 	}
@@ -94,17 +94,20 @@ func (s *ProductBatchService) CreateProductBatch(productID uint, codeBatch *stri
 	}
 
 	// Create tracking record for creation
-	err = s.trackService.TrackCreate(createdBatch, userID)
-	if err != nil {
-		// Log error but don't fail the creation
-		// Consider using a logger here
-		// log.Printf("Failed to create tracking record: %v", err)
+	batchModel, err := s.batchRepo.GetProductBatchModelByID(batch.ID)
+	if err == nil {
+		err = s.trackService.TrackCreate(batchModel, userID)
+		if err != nil {
+			// Log error but don't fail the creation
+			// Consider using a logger here
+			// log.Printf("Failed to create tracking record: %v", err)
+		}
 	}
 
-	return &createdBatch, nil
+	return createdBatch, nil
 }
 
-func (s *ProductBatchService) UpdateProductBatch(id uint, productID uint, codeBatch *string, unitPrice *float64, expDate time.Time, description *string, userID uint) (*model.ProductBatch, error) {
+func (s *ProductBatchService) UpdateProductBatch(id uint, productID uint, codeBatch *string, unitPrice *float64, expDate time.Time, description *string, userID uint) (interface{}, error) {
 	if id == 0 {
 		return nil, errors.New("invalid product batch ID")
 	}
@@ -113,8 +116,8 @@ func (s *ProductBatchService) UpdateProductBatch(id uint, productID uint, codeBa
 		return nil, errors.New("user ID is required for audit trail")
 	}
 
-	// Check if batch exists
-	oldBatch, err := s.batchRepo.GetProductBatchByID(id)
+	// Check if batch exists using model for business logic
+	oldBatch, err := s.batchRepo.GetProductBatchModelByID(id)
 	if err != nil {
 		return nil, errors.New("product batch not found")
 	}
@@ -173,7 +176,7 @@ func (s *ProductBatchService) UpdateProductBatch(id uint, productID uint, codeBa
 		return nil, err
 	}
 
-	return &updatedBatch, nil
+	return updatedBatch, nil
 }
 
 func (s *ProductBatchService) DeleteProductBatch(id uint, userID uint) error {
@@ -185,8 +188,8 @@ func (s *ProductBatchService) DeleteProductBatch(id uint, userID uint) error {
 		return errors.New("user ID is required for audit trail")
 	}
 
-	// Check if batch exists
-	batchToDelete, err := s.batchRepo.GetProductBatchByID(id)
+	// Check if batch exists using model for tracking
+	batchToDelete, err := s.batchRepo.GetProductBatchModelByID(id)
 	if err != nil {
 		return errors.New("product batch not found")
 	}

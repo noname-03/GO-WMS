@@ -2,6 +2,7 @@ package handler
 
 import (
 	"log"
+	"myapp/internal/repository"
 	"myapp/internal/service"
 	"myapp/pkg/helper"
 	"strconv"
@@ -64,7 +65,7 @@ func GetProductBatches(c *fiber.Ctx) error {
 		return helper.Fail(c, 500, "Failed to fetch product batches", err.Error())
 	}
 
-	log.Printf("[PRODUCT_BATCH] Get all product batches successful - Found %d batches", len(batches))
+	log.Printf("[PRODUCT_BATCH] Get all product batches successful")
 	return helper.Success(c, 200, "Success", batches)
 }
 
@@ -85,7 +86,7 @@ func GetProductBatchesByProduct(c *fiber.Ctx) error {
 		return helper.Fail(c, statusCode, message, err.Error())
 	}
 
-	log.Printf("[PRODUCT_BATCH] Get product batches by product successful - Product ID: %d, Found %d batches", productIDUint, len(batches))
+	log.Printf("[PRODUCT_BATCH] Get product batches by product successful")
 	return helper.Success(c, 200, "Success", batches)
 }
 
@@ -99,13 +100,14 @@ func GetProductBatchByID(c *fiber.Ctx) error {
 		return helper.Fail(c, 400, "Invalid product batch ID", err.Error())
 	}
 
-	batch, err := productBatchService.GetProductBatchByID(uint(idUint))
+	batchRepo := repository.NewProductBatchRepository()
+	batch, err := batchRepo.GetProductBatchByID(uint(idUint))
 	if err != nil {
 		log.Printf("[PRODUCT_BATCH] Get product batch by ID failed - Batch ID: %d not found, error: %v", idUint, err)
 		return helper.Fail(c, 404, "Product batch not found", err.Error())
 	}
 
-	log.Printf("[PRODUCT_BATCH] Get product batch by ID successful - Batch ID: %d, Product ID: %d", batch.ID, batch.ProductID)
+	log.Printf("[PRODUCT_BATCH] Get product batch by ID successful - Batch ID: %d, Product: %s", batch.ID, batch.ProductName)
 	return helper.Success(c, 200, "Success", batch)
 }
 
@@ -141,7 +143,7 @@ func CreateProductBatch(c *fiber.Ctx) error {
 		return helper.Fail(c, statusCode, message, err.Error())
 	}
 
-	log.Printf("[PRODUCT_BATCH] Create product batch successful - Batch ID: %d, Product ID: %d, Created by User ID: %d", batch.ID, batch.ProductID, userID)
+	log.Printf("[PRODUCT_BATCH] Create product batch successful - Product ID: %d, Created by User ID: %d", req.ProductID, userID)
 	return helper.Success(c, 201, "Product batch created successfully", batch)
 }
 
@@ -187,7 +189,7 @@ func UpdateProductBatch(c *fiber.Ctx) error {
 		return helper.Fail(c, statusCode, message, err.Error())
 	}
 
-	log.Printf("[PRODUCT_BATCH] Update product batch successful - Batch ID: %d, Product ID: %d, Updated by User ID: %d", batch.ID, batch.ProductID, userID)
+	log.Printf("[PRODUCT_BATCH] Update product batch successful - Batch ID: %d, Updated by User ID: %d", idUint, userID)
 	return helper.Success(c, 200, "Product batch updated successfully", batch)
 }
 
