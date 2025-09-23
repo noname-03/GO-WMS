@@ -23,9 +23,10 @@ jobs:
         script: |
           cd public_html/GO-WMS || { echo "Dir not found"; exit 1; }
           ls -al
-          pkill -f ./main || echo "main process not found"
           git status
+          echo "Step: git branch"
           git branch
+          echo "Step: git pull"
           git pull origin production || echo "Git pull failed"
-          go version
+          echo "Step: go build"
           go build -o main main.go || echo "Go build failed"
