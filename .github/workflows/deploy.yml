@@ -21,4 +21,11 @@ jobs:
         password: ${{ secrets.SSH_PASSWORD }}
         port: ${{ secrets.SSH_PORT }}
         script: |
-          echo "Test SSH connection successful"
+          cd public_html/GO-WMS || { echo "Dir not found"; exit 1; }
+          ls -al
+          pkill -f ./main || echo "main process not found"
+          git status
+          git branch
+          git pull origin production || echo "Git pull failed"
+          go version
+          go build -o main main.go || echo "Go build failed"
