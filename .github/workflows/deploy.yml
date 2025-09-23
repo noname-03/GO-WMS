@@ -25,7 +25,3 @@ jobs:
           pkill -f ./main || true
           git pull origin production
           go build -o main main.go
-          nohup ./main &
-          ls -l main
-          nohup ./main > main.log 2>&1 &
-          tail -n 20 main.log
