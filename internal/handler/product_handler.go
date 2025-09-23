@@ -67,7 +67,7 @@ func GetProducts(c *fiber.Ctx) error {
 		return helper.Fail(c, 500, "Failed to fetch products", err.Error())
 	}
 
-	log.Printf("[PRODUCT] Get all products successful - Found %d products", len(products))
+	log.Printf("[PRODUCT] Get all products successful")
 	return helper.Success(c, 200, "Success", products)
 }
 
@@ -88,7 +88,7 @@ func GetProductsByCategory(c *fiber.Ctx) error {
 		return helper.Fail(c, statusCode, message, err.Error())
 	}
 
-	log.Printf("[PRODUCT] Get products by category successful - Category ID: %d, Found %d products", categoryIDUint, len(products))
+	log.Printf("[PRODUCT] Get products by category successful")
 	return helper.Success(c, 200, "Success", products)
 }
 
@@ -108,7 +108,7 @@ func GetProductByID(c *fiber.Ctx) error {
 		return helper.Fail(c, 404, "Product not found", err.Error())
 	}
 
-	log.Printf("[PRODUCT] Get product by ID successful - Product ID: %d, Name: %s, Category ID: %d", product.ID, product.Name, product.CategoryID)
+	log.Printf("[PRODUCT] Get product by ID successful")
 	return helper.Success(c, 200, "Success", product)
 }
 
@@ -137,7 +137,7 @@ func CreateProduct(c *fiber.Ctx) error {
 		return helper.Fail(c, statusCode, message, err.Error())
 	}
 
-	log.Printf("[PRODUCT] Create product successful - Product ID: %d, Name: %s, Category ID: %d, Created by User ID: %d", product.ID, product.Name, product.CategoryID, userID)
+	log.Printf("[PRODUCT] Create product successful - Name: %s, Category ID: %d, Created by User ID: %d", req.Name, req.CategoryID, userID)
 	return helper.Success(c, 201, "Product created successfully", product)
 }
 
@@ -170,10 +170,11 @@ func UpdateProduct(c *fiber.Ctx) error {
 	if err != nil {
 		log.Printf("[PRODUCT] Update product failed - Product ID: %d, User ID: %d, error: %v", idUint, userID, err)
 		statusCode, message := handleProductError(err)
+		log.Printf("[PRODUCT] Update product failed - Error: %s", err)
 		return helper.Fail(c, statusCode, message, err.Error())
 	}
 
-	log.Printf("[PRODUCT] Update product successful - Product ID: %d, Name: %s, Category ID: %d, Updated by User ID: %d", product.ID, product.Name, product.CategoryID, userID)
+	log.Printf("[PRODUCT] Update product successful - Product ID: %d, Updated by User ID: %d", idUint, userID)
 	return helper.Success(c, 200, "Product updated successfully", product)
 }
 
@@ -201,6 +202,6 @@ func DeleteProduct(c *fiber.Ctx) error {
 		return helper.Fail(c, statusCode, message, err.Error())
 	}
 
-	log.Printf("[PRODUCT] Delete product successful - Product ID: %d, Deleted by User ID: %d", idUint, userID)
+	log.Printf("[PRODUCT] Delete product successful")
 	return helper.Success(c, 200, "Product deleted successfully", nil)
 }

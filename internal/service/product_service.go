@@ -17,11 +17,11 @@ func NewProductService() *ProductService {
 }
 
 // Business logic methods
-func (s *ProductService) GetAllProducts() ([]model.Product, error) {
+func (s *ProductService) GetAllProducts() (interface{}, error) {
 	return s.productRepo.GetAllProducts()
 }
 
-func (s *ProductService) GetProductsByCategory(categoryID uint) ([]model.Product, error) {
+func (s *ProductService) GetProductsByCategory(categoryID uint) (interface{}, error) {
 	if categoryID == 0 {
 		return nil, errors.New("invalid category ID")
 	}
@@ -38,15 +38,15 @@ func (s *ProductService) GetProductsByCategory(categoryID uint) ([]model.Product
 	return s.productRepo.GetProductsByCategory(categoryID)
 }
 
-func (s *ProductService) GetProductByID(id uint) (*model.Product, error) {
+func (s *ProductService) GetProductByID(id uint) (interface{}, error) {
 	product, err := s.productRepo.GetProductByID(id)
 	if err != nil {
 		return nil, err
 	}
-	return &product, nil
+	return product, nil
 }
 
-func (s *ProductService) CreateProduct(categoryID uint, name string, description *string, userID uint) (*model.Product, error) {
+func (s *ProductService) CreateProduct(categoryID uint, name string, description *string, userID uint) (interface{}, error) {
 	if categoryID == 0 {
 		return nil, errors.New("category ID is required")
 	}
@@ -89,16 +89,16 @@ func (s *ProductService) CreateProduct(categoryID uint, name string, description
 		return nil, err
 	}
 
-	// Fetch the created product with relationships
+	// Fetch the created product with brand and category names
 	createdProduct, err := s.productRepo.GetProductByID(product.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	return &createdProduct, nil
+	return createdProduct, nil
 }
 
-func (s *ProductService) UpdateProduct(id uint, categoryID uint, name string, description *string, userID uint) (*model.Product, error) {
+func (s *ProductService) UpdateProduct(id uint, categoryID uint, name string, description *string, userID uint) (interface{}, error) {
 	if id == 0 {
 		return nil, errors.New("invalid product ID")
 	}
@@ -108,7 +108,7 @@ func (s *ProductService) UpdateProduct(id uint, categoryID uint, name string, de
 	}
 
 	// Check if product exists
-	product, err := s.productRepo.GetProductByID(id)
+	product, err := s.productRepo.GetProductModelByID(id)
 	if err != nil {
 		return nil, errors.New("product not found")
 	}
@@ -129,8 +129,16 @@ func (s *ProductService) UpdateProduct(id uint, categoryID uint, name string, de
 		categoryID = product.CategoryID
 	}
 
-	// Note: No duplicate check for update since we don't use excludeID
-	// This means update will fail if trying to use existing name in same category
+	// Check if new name conflicts with existing products for this category
+	if name != "" && (name != product.Name || categoryID != product.CategoryID) {
+		exists, err := s.productRepo.CheckProductExists(name, categoryID)
+		if err != nil {
+			return nil, err
+		}
+		if exists {
+			return nil, errors.New("product already exists for this category")
+		}
+	}
 
 	// Prepare update data with audit trail
 	updateData := make(map[string]interface{})
@@ -155,7 +163,7 @@ func (s *ProductService) UpdateProduct(id uint, categoryID uint, name string, de
 	if err != nil {
 		return nil, err
 	}
-	return &updatedProduct, nil
+	return updatedProduct, nil
 }
 
 func (s *ProductService) DeleteProduct(id uint, userID uint) error {
@@ -168,7 +176,7 @@ func (s *ProductService) DeleteProduct(id uint, userID uint) error {
 	}
 
 	// Check if product exists
-	_, err := s.productRepo.GetProductByID(id)
+	_, err := s.productRepo.GetProductModelByID(id)
 	if err != nil {
 		return errors.New("product not found")
 	}

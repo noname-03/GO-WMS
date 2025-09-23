@@ -7,25 +7,66 @@ import (
 
 type ProductRepository struct{}
 
+// productWithBrandCategoryResponse struct untuk response dengan brand dan category name
+type productWithBrandCategoryResponse struct {
+	ID           uint    `json:"id"`
+	BrandID      uint    `json:"brandId"`
+	CategoryID   uint    `json:"categoryId"`
+	BrandName    string  `json:"brandName"`
+	CategoryName string  `json:"categoryName"`
+	Name         string  `json:"name"`
+	Description  *string `json:"description"`
+}
+
 func NewProductRepository() *ProductRepository {
 	return &ProductRepository{}
 }
 
-func (r *ProductRepository) GetAllProducts() ([]model.Product, error) {
-	var products []model.Product
-	result := database.DB.Preload("Category").Preload("Category.Brand").Find(&products)
+func (r *ProductRepository) GetAllProducts() ([]productWithBrandCategoryResponse, error) {
+	var products []productWithBrandCategoryResponse
+
+	result := database.DB.Table("products p").
+		Select("p.id, c.brand_id, p.category_id, b.name as brand_name, c.name as category_name, p.name, p.description").
+		Joins("LEFT JOIN categories c ON p.category_id = c.id AND c.deleted_at IS NULL").
+		Joins("LEFT JOIN brands b ON c.brand_id = b.id AND b.deleted_at IS NULL").
+		Where("p.deleted_at IS NULL").
+		Order("p.name ASC").
+		Find(&products)
+
 	return products, result.Error
 }
 
-func (r *ProductRepository) GetProductsByCategory(categoryID uint) ([]model.Product, error) {
-	var products []model.Product
-	result := database.DB.Preload("Category").Preload("Category.Brand").Where("category_id = ?", categoryID).Find(&products)
+func (r *ProductRepository) GetProductsByCategory(categoryID uint) ([]productWithBrandCategoryResponse, error) {
+	var products []productWithBrandCategoryResponse
+
+	result := database.DB.Table("products p").
+		Select("p.id, c.brand_id, p.category_id, b.name as brand_name, c.name as category_name, p.name, p.description").
+		Joins("INNER JOIN categories c ON p.category_id = c.id AND c.deleted_at IS NULL").
+		Joins("INNER JOIN brands b ON c.brand_id = b.id AND b.deleted_at IS NULL").
+		Where("p.category_id = ? AND p.deleted_at IS NULL", categoryID).
+		Order("p.name ASC").
+		Find(&products)
+
 	return products, result.Error
 }
 
-func (r *ProductRepository) GetProductByID(id uint) (model.Product, error) {
+func (r *ProductRepository) GetProductByID(id uint) (productWithBrandCategoryResponse, error) {
+	var product productWithBrandCategoryResponse
+
+	result := database.DB.Table("products p").
+		Select("p.id, c.brand_id, p.category_id, b.name as brand_name, c.name as category_name, p.name, p.description").
+		Joins("INNER JOIN categories c ON p.category_id = c.id AND c.deleted_at IS NULL").
+		Joins("INNER JOIN brands b ON c.brand_id = b.id AND b.deleted_at IS NULL").
+		Where("p.id = ? AND p.deleted_at IS NULL", id).
+		First(&product)
+
+	return product, result.Error
+}
+
+// GetProductModelByID returns model.Product for service operations
+func (r *ProductRepository) GetProductModelByID(id uint) (model.Product, error) {
 	var product model.Product
-	result := database.DB.Preload("Category").Preload("Category.Brand").Preload("ProductBatches").First(&product, id)
+	result := database.DB.Where("id = ?", id).First(&product)
 	return product, result.Error
 }
 
