@@ -3,26 +3,42 @@ package helper
 import "github.com/gofiber/fiber/v2"
 
 type APIResponse struct {
-    Code    int         `json:"code"`
-    Message string      `json:"message"`
-    Data    interface{} `json:"data,omitempty"`
-    Error   interface{} `json:"error,omitempty"`
+	Code    int         `json:"code"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data,omitempty"`
+	Error   interface{} `json:"error,omitempty"`
 }
 
+// SuccessMessage untuk response tanpa data (hanya message)
 func Success(c *fiber.Ctx, code int, message string, data interface{}) error {
-    return c.Status(code).JSON(APIResponse{
-        Code:    code,
-        Message: message,
-        Data:    data,
-    })
+	return c.Status(code).JSON(APIResponse{
+		Code:    code,
+		Message: message,
+		Data:    data,
+	})
+}
+
+// SuccessOptional dengan data optional menggunakan variadic
+func SuccessOptional(c *fiber.Ctx, code int, message string, data ...interface{}) error {
+	response := APIResponse{
+		Code:    code,
+		Message: message,
+	}
+
+	// Jika ada data, set ke response
+	if len(data) > 0 && data[0] != nil {
+		response.Data = data[0]
+	}
+
+	return c.Status(code).JSON(response)
 }
 
 func Fail(c *fiber.Ctx, code int, message string, err interface{}) error {
-    return c.Status(code).JSON(APIResponse{
-        Code:    code,
-        Message: message,
-        Error:   err,
-    })
+	return c.Status(code).JSON(APIResponse{
+		Code:    code,
+		Message: message,
+		Error:   err,
+	})
 }
 
 // Message Sukses

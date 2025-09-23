@@ -108,7 +108,7 @@ func GetCategoryByID(c *fiber.Ctx) error {
 		return helper.Fail(c, 404, "Category not found", err.Error())
 	}
 
-	log.Printf("[CATEGORY] Get category by ID successful - Category ID: %d, Name: %s, Brand ID: %d", category.ID, category.Name, category.BrandID)
+	log.Printf("[CATEGORY] Get category by ID successful")
 	return helper.Success(c, 200, "Success", category)
 }
 
@@ -137,7 +137,7 @@ func CreateCategory(c *fiber.Ctx) error {
 		return helper.Fail(c, statusCode, message, err.Error())
 	}
 
-	log.Printf("[CATEGORY] Create category successful - Category ID: %d, Name: %s, Brand ID: %d, Created by User ID: %d", category.ID, category.Name, category.BrandID, userID)
+	log.Printf("[CATEGORY] Create category successful")
 	return helper.Success(c, 201, "Category created successfully", category)
 }
 
@@ -173,7 +173,7 @@ func UpdateCategory(c *fiber.Ctx) error {
 		return helper.Fail(c, statusCode, message, err.Error())
 	}
 
-	log.Printf("[CATEGORY] Update category successful - Category ID: %d, Name: %s, Brand ID: %d, Updated by User ID: %d", category.ID, category.Name, category.BrandID, userID)
+	log.Printf("[CATEGORY] Update category successful")
 	return helper.Success(c, 200, "Category updated successfully", category)
 }
 

@@ -7,10 +7,11 @@ import (
 
 type CategoryRepository struct{}
 
-// categoryBasicResponse struct untuk GetCategoriesByBrand tanpa relasi Brand
-type categoryBasicResponse struct {
+// categoryWithBrandResponse struct untuk response dengan brand name
+type categoryWithBrandResponse struct {
 	ID          uint    `json:"id"`
 	BrandID     uint    `json:"brandId"`
+	BrandName   string  `json:"brandName"`
 	Name        string  `json:"name"`
 	Description *string `json:"description"`
 }
@@ -19,32 +20,48 @@ func NewCategoryRepository() *CategoryRepository {
 	return &CategoryRepository{}
 }
 
-func (r *CategoryRepository) GetAllCategories() ([]categoryBasicResponse, error) {
-	var categories []categoryBasicResponse
+func (r *CategoryRepository) GetAllCategories() ([]categoryWithBrandResponse, error) {
+	var categories []categoryWithBrandResponse
 
-	result := database.DB.Table("categories").
-		Select("id, brand_id, name, description").
-		Where("deleted_at IS NULL").
-		Order("name ASC").
+	result := database.DB.Debug().Table("categories c").
+		Select("c.id, c.brand_id, c.name, c.description, b.name as brand_name").
+		Joins("LEFT JOIN brands b ON c.brand_id = b.id AND b.deleted_at IS NULL").
+		Where("c.deleted_at IS NULL").
+		Order("c.name ASC").
 		Find(&categories)
 
 	return categories, result.Error
 }
 
-func (r *CategoryRepository) GetCategoriesByBrand(brandID uint) ([]categoryBasicResponse, error) {
-	var categories []categoryBasicResponse
+func (r *CategoryRepository) GetCategoriesByBrand(brandID uint) ([]categoryWithBrandResponse, error) {
+	var categories []categoryWithBrandResponse
 
-	result := database.DB.Table("categories").
-		Select("id, brand_id, name, description").
-		Where("brand_id = ? AND deleted_at IS NULL", brandID).
+	result := database.DB.Table("categories c").
+		Select("c.id, c.brand_id, c.name, c.description, b.name as brand_name").
+		Joins("INNER JOIN brands b ON c.brand_id = b.id AND b.deleted_at IS NULL").
+		Where("c.brand_id = ? AND c.deleted_at IS NULL", brandID).
+		Order("c.name ASC").
 		Find(&categories)
 
 	return categories, result.Error
 }
 
-func (r *CategoryRepository) GetCategoryByID(id uint) (model.Category, error) {
+func (r *CategoryRepository) GetCategoryByID(id uint) (categoryWithBrandResponse, error) {
+	var category categoryWithBrandResponse
+
+	result := database.DB.Table("categories c").
+		Select("c.id, c.brand_id, c.name, c.description, b.name as brand_name").
+		Joins("INNER JOIN brands b ON c.brand_id = b.id AND b.deleted_at IS NULL").
+		Where("c.id = ? AND c.deleted_at IS NULL", id).
+		First(&category)
+
+	return category, result.Error
+}
+
+// GetCategoryModelByID returns model.Category for service operations
+func (r *CategoryRepository) GetCategoryModelByID(id uint) (model.Category, error) {
 	var category model.Category
-	result := database.DB.Preload("Brand").First(&category, id)
+	result := database.DB.Preload("Brand").Where("id = ?", id).First(&category)
 	return category, result.Error
 }
 

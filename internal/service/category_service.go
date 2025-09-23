@@ -38,7 +38,7 @@ func (s *CategoryService) GetCategoriesByBrand(brandID uint) (interface{}, error
 	return s.categoryRepo.GetCategoriesByBrand(brandID)
 }
 
-func (s *CategoryService) GetCategoryByID(id uint) (*model.Category, error) {
+func (s *CategoryService) GetCategoryByID(id uint) (interface{}, error) {
 	category, err := s.categoryRepo.GetCategoryByID(id)
 	if err != nil {
 		return nil, err
@@ -46,7 +46,7 @@ func (s *CategoryService) GetCategoryByID(id uint) (*model.Category, error) {
 	return &category, nil
 }
 
-func (s *CategoryService) CreateCategory(brandID uint, name string, description *string, userID uint) (*model.Category, error) {
+func (s *CategoryService) CreateCategory(brandID uint, name string, description *string, userID uint) (interface{}, error) {
 	if brandID == 0 {
 		return nil, errors.New("brand ID is required")
 	}
@@ -89,16 +89,16 @@ func (s *CategoryService) CreateCategory(brandID uint, name string, description 
 		return nil, err
 	}
 
-	// Fetch the created category with brand relationship
+	// Fetch the created category with brand name (consistent format)
 	createdCategory, err := s.categoryRepo.GetCategoryByID(category.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	return &createdCategory, nil
+	return createdCategory, nil
 }
 
-func (s *CategoryService) UpdateCategory(id uint, brandID uint, name string, description *string, userID uint) (*model.Category, error) {
+func (s *CategoryService) UpdateCategory(id uint, brandID uint, name string, description *string, userID uint) (interface{}, error) {
 	if id == 0 {
 		return nil, errors.New("invalid category ID")
 	}
@@ -163,7 +163,7 @@ func (s *CategoryService) UpdateCategory(id uint, brandID uint, name string, des
 	if err != nil {
 		return nil, err
 	}
-	return &updatedCategory, nil
+	return updatedCategory, nil
 }
 
 func (s *CategoryService) DeleteCategory(id uint, userID uint) error {
