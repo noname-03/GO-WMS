@@ -21,7 +21,4 @@ jobs:
         password: ${{ secrets.SSH_PASSWORD }}
         port: ${{ secrets.SSH_PORT }}
         script: |
-          cd public_html/GO-WMS
-          pkill -f ./main || true
-          git pull origin production
-          go build -o main main.go
+          echo "Test SSH connection successful"
