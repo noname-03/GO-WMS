@@ -1,31 +1,31 @@
-# name: Deploy to Hosting
+name: Deploy to Hosting
 
-# on:
-#   push:
-#     branches:
-#       - production
+on:
+  push:
+    branches:
+      - production
 
-# jobs:
-#   deploy:
-#     runs-on: ubuntu-latest
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
 
-#     steps:
-#     - name: Checkout code
-#       uses: actions/checkout@v4
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-#     - name: Deploy to Hosting via SSH
-#       uses: appleboy/ssh-action@v0.1.10
-#       with:
-#         host: ${{ secrets.SSH_HOST }}
-#         username: ${{ secrets.SSH_USER }}
-#         password: ${{ secrets.SSH_PASSWORD }}
-#         port: ${{ secrets.SSH_PORT }}
-#         script: |
-#           cd public_html/GO-WMS
-#           pkill -f ./main || true
-#           git pull origin production
-#           go build -o main main.go
-#           nohup ./main &
-#           ls -l main
-#           nohup ./main > main.log 2>&1 &
-#           tail -n 20 main.log
+    - name: Deploy to Hosting via SSH
+      uses: appleboy/ssh-action@v0.1.10
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        password: ${{ secrets.SSH_PASSWORD }}
+        port: ${{ secrets.SSH_PORT }}
+        script: |
+          cd public_html/GO-WMS
+          pkill -f ./main || true
+          git pull origin production
+          go build -o main main.go
+          nohup ./main &
+          ls -l main
+          nohup ./main > main.log 2>&1 &
+          tail -n 20 main.log
