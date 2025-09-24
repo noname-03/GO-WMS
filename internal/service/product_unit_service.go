@@ -48,9 +48,13 @@ func (s *ProductUnitService) GetProductUnitByID(id uint) (interface{}, error) {
 	return unit, nil
 }
 
-func (s *ProductUnitService) CreateProductUnit(productID uint, name *string, quantity *float64, unitPrice *float64, barcode *string, description *string, userID uint) (interface{}, error) {
+func (s *ProductUnitService) CreateProductUnit(productID uint, locationID uint, name *string, quantity *float64, unitPrice *float64, barcode *string, description *string, userID uint) (interface{}, error) {
 	if productID == 0 {
 		return nil, errors.New("product ID is required")
+	}
+
+	if locationID == 0 {
+		return nil, errors.New("location ID is required")
 	}
 
 	if userID == 0 {
@@ -66,24 +70,36 @@ func (s *ProductUnitService) CreateProductUnit(productID uint, name *string, qua
 		return nil, errors.New("product not found")
 	}
 
-	// Check if product unit with same name exists for this product (if name is provided)
+	// Check if product unit with same name exists for this product and location (if name is provided)
 	if name != nil && *name != "" {
-		exists, err := s.productUnitRepo.CheckProductUnitExists(productID, *name, 0)
+		exists, err := s.productUnitRepo.CheckProductUnitExists(productID, locationID, *name, 0)
 		if err != nil {
 			return nil, err
 		}
 		if exists {
-			return nil, errors.New("product unit with this name already exists for this product")
+			return nil, errors.New("product unit with this name already exists for this product and location")
 		}
 	}
 
+	// Check if barcode exists for this product and location (if barcode is provided)
 	if barcode != nil && *barcode != "" {
-		exists, err := s.productUnitRepo.CheckBarcodeProductUnitExists(productID, *barcode, 0)
+		exists, err := s.productUnitRepo.CheckBarcodeProductUnitExists(productID, locationID, *barcode, 0)
 		if err != nil {
 			return nil, err
 		}
 		if exists {
-			return nil, errors.New("product unit with this barcode already exists for this product")
+			return nil, errors.New("barcode already exists for this product and location")
+		}
+	}
+
+	// Check if barcode exists for this product and location (if barcode is provided)
+	if barcode != nil && *barcode != "" {
+		exists, err := s.productUnitRepo.CheckBarcodeProductUnitExists(productID, locationID, *barcode, 0)
+		if err != nil {
+			return nil, err
+		}
+		if exists {
+			return nil, errors.New("barcode already exists for this product and location")
 		}
 	}
 
@@ -98,6 +114,7 @@ func (s *ProductUnitService) CreateProductUnit(productID uint, name *string, qua
 
 	productUnit := &model.ProductUnit{
 		ProductID:   productID,
+		LocationID:  locationID,
 		Name:        name,
 		Quantity:    quantity,
 		UnitPrice:   unitPrice,
@@ -119,12 +136,21 @@ func (s *ProductUnitService) CreateProductUnit(productID uint, name *string, qua
 			return nil, err
 		}
 	}
-	return createdProductUnit, nil
+
+	res, err := s.productUnitRepo.GetProductUnitByID(productUnit.ID)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
-func (s *ProductUnitService) UpdateProductUnit(id uint, productID uint, name *string, quantity *float64, UnitPrice *float64, barcode *string, description *string, userID uint) (interface{}, error) {
+func (s *ProductUnitService) UpdateProductUnit(id uint, productID uint, locationID uint, name *string, quantity *float64, UnitPrice *float64, barcode *string, description *string, userID uint) (interface{}, error) {
 	if id == 0 {
 		return nil, errors.New("invalid product unit ID")
+	}
+
+	if locationID == 0 {
+		return nil, errors.New("invalid location ID")
 	}
 
 	if userID == 0 {
@@ -153,19 +179,23 @@ func (s *ProductUnitService) UpdateProductUnit(id uint, productID uint, name *st
 		productID = oldBatch.ProductID
 	}
 
+	if locationID == 0 {
+		locationID = oldBatch.LocationID
+	}
+
 	// Check if new name conflicts with existing product units for this product
 	if name != nil && *name != "" {
 		currentName := ""
 		if oldBatch.Name != nil {
 			currentName = *oldBatch.Name
 		}
-		if *name != currentName || productID != oldBatch.ProductID {
-			exists, err := s.productUnitRepo.CheckProductUnitExists(productID, *name, id)
+		if *name != currentName || productID != oldBatch.ProductID || (locationID != 0 && (oldBatch.LocationID == 0 || locationID != oldBatch.LocationID)) {
+			exists, err := s.productUnitRepo.CheckProductUnitExists(productID, locationID, *name, id)
 			if err != nil {
 				return nil, err
 			}
 			if exists {
-				return nil, errors.New("product unit name already in use for this product")
+				return nil, errors.New("product unit name already in use for this product and location")
 			}
 		}
 	}
@@ -177,12 +207,12 @@ func (s *ProductUnitService) UpdateProductUnit(id uint, productID uint, name *st
 			currentbarcode = *oldBatch.Barcode
 		}
 		if *barcode != currentbarcode || productID != oldBatch.ProductID {
-			exists, err := s.productUnitRepo.CheckBarcodeProductUnitExists(productID, *barcode, 0)
+			exists, err := s.productUnitRepo.CheckBarcodeProductUnitExists(productID, locationID, *barcode, 0)
 			if err != nil {
 				return nil, err
 			}
 			if exists {
-				return nil, errors.New("product unit barcode already in use for this product")
+				return nil, errors.New("product unit barcode already in use for this product and location")
 			}
 		}
 	}
@@ -247,9 +277,15 @@ func (s *ProductUnitService) DeleteProductUnit(id uint, userID uint) error {
 	}
 
 	// Check if product unit exists
-	_, err := s.productUnitRepo.GetProductUnitByIDModel(id)
+	unitDelete, err := s.productUnitRepo.GetProductUnitByIDModel(id)
 	if err != nil {
 		return errors.New("product unit not found")
+	}
+
+	// Create tracking record for deletion (before actual deletion)
+	err = s.trackUnitService.TrackDeleteProductUnit(unitDelete, userID)
+	if err != nil {
+		// return nil, err
 	}
 
 	return s.productUnitRepo.DeleteProductUnitWithAudit(id, userID)

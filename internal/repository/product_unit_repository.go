@@ -10,14 +10,16 @@ type ProductUnitRepository struct{}
 
 // productUnitResponse struct untuk response product unit
 type productUnitResponse struct {
-	ID          uint     `json:"id"`
-	ProductID   uint     `json:"productId"`
-	ProductName string   `json:"productName"`
-	Name        *string  `json:"name"`
-	Quantity    *float64 `json:"quantity"`
-	UnitPrice   *string  `json:"UnitPrice"`
-	Barcode     *string  `json:"barcode"`
-	Description *string  `json:"description"`
+	ID           uint     `json:"id"`
+	ProductID    uint     `json:"productId"`
+	ProductName  string   `json:"productName"`
+	LocationID   uint     `json:"locationId"`
+	LocationName string   `json:"locationName"`
+	Name         *string  `json:"name"`
+	Quantity     *float64 `json:"quantity"`
+	UnitPrice    *string  `json:"unitPrice"`
+	Barcode      *string  `json:"barcode"`
+	Description  *string  `json:"description"`
 }
 
 func NewProductUnitRepository() *ProductUnitRepository {
@@ -27,8 +29,9 @@ func NewProductUnitRepository() *ProductUnitRepository {
 func (r *ProductUnitRepository) GetAllProductUnits() ([]productUnitResponse, error) {
 	var units []productUnitResponse
 	result := database.DB.Table("product_units pu").
-		Select("pu.id, pu.product_id, p.name as product_name, pu.name, pu.quantity, pu.unit_price, pu.barcode, pu.description").
+		Select("pu.id, pu.product_id, p.name as product_name, pu.name, pu.quantity, pu.unit_price, pu.barcode, pu.description, l.id as location_id, l.name as location_name").
 		Joins("LEFT JOIN products p ON pu.product_id = p.id AND p.deleted_at IS NULL").
+		Joins("LEFT JOIN locations l ON pu.location_id = l.id AND l.deleted_at IS NULL").
 		Where("pu.deleted_at IS NULL").
 		Order("pu.created_at DESC").
 		Find(&units)
@@ -38,8 +41,9 @@ func (r *ProductUnitRepository) GetAllProductUnits() ([]productUnitResponse, err
 func (r *ProductUnitRepository) GetProductUnitsByProduct(productID uint) ([]productUnitResponse, error) {
 	var units []productUnitResponse
 	result := database.DB.Table("product_units pu").
-		Select("pu.id, pu.product_id, p.name as product_name, pu.name, pu.quantity, pu.unit_price, pu.barcode, pu.description").
+		Select("pu.id, pu.product_id, p.name as product_name, pu.name, pu.quantity, pu.unit_price, pu.barcode, pu.description, l.id as location_id, l.name as location_name").
 		Joins("LEFT JOIN products p ON pu.product_id = p.id AND p.deleted_at IS NULL").
+		Joins("LEFT JOIN locations l ON pu.location_id = l.id AND l.deleted_at IS NULL").
 		Where("pu.deleted_at IS NULL AND pu.product_id = ?", productID).
 		Order("pu.created_at DESC").
 		Find(&units)
@@ -49,8 +53,9 @@ func (r *ProductUnitRepository) GetProductUnitsByProduct(productID uint) ([]prod
 func (r *ProductUnitRepository) GetProductUnitByID(id uint) (productUnitResponse, error) {
 	var unit productUnitResponse
 	result := database.DB.Table("product_units pu").
-		Select("pu.id, pu.product_id, p.name as product_name, pu.name, pu.quantity, pu.unit_price, pu.barcode, pu.description").
+		Select("pu.id, pu.product_id, p.name as product_name, pu.name, pu.quantity, pu.unit_price, pu.barcode, pu.description, l.id as location_id, l.name as location_name").
 		Joins("LEFT JOIN products p ON pu.product_id = p.id AND p.deleted_at IS NULL").
+		Joins("LEFT JOIN locations l ON pu.location_id = l.id AND l.deleted_at IS NULL").
 		Where("pu.deleted_at IS NULL AND pu.id = ?", id).
 		First(&unit)
 	return unit, result.Error
@@ -69,9 +74,16 @@ func (r *ProductUnitRepository) CheckProductExists(productID uint) (bool, error)
 	return count > 0, result.Error
 }
 
-func (r *ProductUnitRepository) CheckProductUnitExists(productID uint, name string, excludeID uint) (bool, error) {
+func (r *ProductUnitRepository) CheckProductUnitExists(productID uint, locationID uint, name string, excludeID uint) (bool, error) {
 	var count int64
 	query := database.DB.Model(&model.ProductUnit{}).Where("product_id = ? AND name = ? AND deleted_at IS NULL", productID, name)
+
+	if locationID != 0 {
+		query = query.Where("location_id = ?", locationID)
+	} else {
+		query = query.Where("location_id IS NULL")
+	}
+
 	if excludeID != 0 {
 		query = query.Where("id != ?", excludeID)
 	}
@@ -79,9 +91,16 @@ func (r *ProductUnitRepository) CheckProductUnitExists(productID uint, name stri
 	return count > 0, result.Error
 }
 
-func (r *ProductUnitRepository) CheckBarcodeProductUnitExists(productID uint, barcode string, excludeID uint) (bool, error) {
+func (r *ProductUnitRepository) CheckBarcodeProductUnitExists(productID uint, locationID uint, barcode string, excludeID uint) (bool, error) {
 	var count int64
 	query := database.DB.Model(&model.ProductUnit{}).Where("product_id = ? AND barcode = ? AND deleted_at IS NULL", productID, barcode)
+
+	if locationID != 0 {
+		query = query.Where("location_id = ?", locationID)
+	} else {
+		query = query.Where("location_id IS NULL")
+	}
+
 	if excludeID != 0 {
 		query = query.Where("id != ?", excludeID)
 	}

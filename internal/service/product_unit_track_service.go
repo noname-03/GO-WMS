@@ -134,3 +134,10 @@ func (s *ProductUnitTrackService) TrackUpdateFromChangesProductUnit(updateData m
 	_, err := s.CreateProductUnitTrack(oldBatch.ID, description, userID)
 	return err
 }
+
+// TrackDelete creates a tracking record for product unit deletion
+func (s *ProductUnitTrackService) TrackDeleteProductUnit(productUnit model.ProductUnit, userID uint) error {
+	description := s.trackingUnitUtils.GenerateDeleteDescriptionProductUnit(productUnit)
+	_, err := s.CreateProductUnitTrack(productUnit.ID, description, userID)
+	return err
+}

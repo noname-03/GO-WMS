@@ -46,7 +46,7 @@ func (s *ProductUnitTrackSeeder) Seed(db *gorm.DB) error {
 	// Get admin user for audit trail
 	var adminUser model.User
 	var userID *uint
-	if err := db.Where("username = ?", "admin").First(&adminUser).Error; err == nil {
+	if err := db.Where("name = ?", "admin").First(&adminUser).Error; err == nil {
 		userID = &adminUser.ID
 	}
 

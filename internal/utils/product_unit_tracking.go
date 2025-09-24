@@ -11,6 +11,12 @@ type ProductUnitTrackingUtils struct{}
 // GenerateCreateDescription creates description for product unit creation
 func (u *ProductUnitTrackingUtils) GenerateCreateDescriptionProductUnit(productUnit model.ProductUnit) string {
 	description := "Product unit created"
+	if productUnit.ProductID != 0 {
+		description += " with product ID: " + fmt.Sprintf("%d", productUnit.ProductID)
+	}
+	if productUnit.LocationID != 0 {
+		description += " with location ID: " + fmt.Sprintf("%d", productUnit.LocationID)
+	}
 	if productUnit.Name != nil {
 		description += " with name: " + *productUnit.Name
 	}
@@ -33,6 +39,12 @@ func (u *ProductUnitTrackingUtils) GenerateUpdateDescriptionFromChangesProductUn
 	if newProductID, exists := updateData["product_id"]; exists {
 		if newProductID != oldBatch.ProductID {
 			changes = append(changes, fmt.Sprintf("changed product from ID %d to ID %d", oldBatch.ProductID, newProductID))
+		}
+	}
+
+	if newLocationID, exists := updateData["location_id"]; exists {
+		if newLocationID != oldBatch.LocationID {
+			changes = append(changes, fmt.Sprintf("changed location from ID %d to ID %d", oldBatch.LocationID, newLocationID))
 		}
 	}
 
@@ -126,11 +138,14 @@ func (u *ProductUnitTrackingUtils) GenerateUpdateDescriptionFromChangesProductUn
 	return description
 }
 
-// GenerateDeleteDescription creates description for product batch deletion
+// GenerateDeleteDescription creates description for product unit deletion
 func (u *ProductUnitTrackingUtils) GenerateDeleteDescriptionProductUnit(productUnit model.ProductUnit) string {
-	description := "Product batch deleted"
+	description := "Product unit deleted"
+	if productUnit.ID != 0 {
+		description += " (ID: " + fmt.Sprintf("%d", productUnit.ID) + ")"
+	}
 	if productUnit.Barcode != nil {
-		description += " (code: " + *productUnit.Barcode + ")"
+		description += " (Barcode: " + *productUnit.Barcode + ")"
 	}
 	return description
 }

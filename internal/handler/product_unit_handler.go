@@ -25,8 +25,8 @@ func handleProductUnitError(err error) (int, string) {
 		return 409, "Product unit name already exists for this product"
 	}
 
-	if errMsg == "product unit with this barcode already exists for this product" {
-		return 409, "Product unit with this barcode already exists for this product"
+	if errMsg == "barcode already exists for this product and location" {
+		return 409, "Barcode already exists for this product and location"
 	}
 
 	if errMsg == "product unit barcode already in use for this product" {
@@ -39,6 +39,13 @@ func handleProductUnitError(err error) (int, string) {
 
 	if errMsg == "product not found" {
 		return 404, "Product not found"
+	}
+
+	if errMsg == "invalid location ID" {
+		return 400, "Invalid location ID"
+	}
+	if errMsg == "location ID is required" {
+		return 400, "Invalid location ID"
 	}
 
 	// Handle PostgreSQL constraint errors as backup
@@ -56,18 +63,20 @@ func handleProductUnitError(err error) (int, string) {
 
 type CreateProductUnitRequest struct {
 	ProductID   uint     `json:"productId" validate:"required"`
+	LocationID  uint     `json:"locationId" validate:"required"`
 	Name        *string  `json:"name"`
 	Quantity    *float64 `json:"quantity"`
-	UnitPrice   *float64 `json:"UnitPrice"`
+	UnitPrice   *float64 `json:"unitPrice"`
 	Barcode     *string  `json:"barcode"`
 	Description *string  `json:"description"`
 }
 
 type UpdateProductUnitRequest struct {
-	ProductID   uint     `json:"productId"`
+	ProductID   uint     `json:"productId" validate:"required"`
+	LocationID  uint     `json:"locationId" validate:"required"`
 	Name        *string  `json:"name"`
 	Quantity    *float64 `json:"quantity"`
-	UnitPrice   *float64 `json:"UnitPrice"`
+	UnitPrice   *float64 `json:"unitPrice"`
 	Barcode     *string  `json:"barcode"`
 	Description *string  `json:"description"`
 }
@@ -144,7 +153,7 @@ func CreateProductUnit(c *fiber.Ctx) error {
 
 	log.Printf("[PRODUCT_UNIT] Creating product unit with audit - User ID: %d, Product ID: %d", userID, req.ProductID)
 
-	productUnit, err := productUnitService.CreateProductUnit(req.ProductID, req.Name, req.Quantity, req.UnitPrice, req.Barcode, req.Description, userID)
+	productUnit, err := productUnitService.CreateProductUnit(req.ProductID, req.LocationID, req.Name, req.Quantity, req.UnitPrice, req.Barcode, req.Description, userID)
 	if err != nil {
 		log.Printf("[PRODUCT_UNIT] Create product unit failed - Product ID: %d, User ID: %d, error: %v", req.ProductID, userID, err)
 		statusCode, message := handleProductUnitError(err)
@@ -180,7 +189,7 @@ func UpdateProductUnit(c *fiber.Ctx) error {
 
 	log.Printf("[PRODUCT_UNIT] Updating product unit with audit - Product Unit ID: %d, User ID: %d", idUint, userID)
 
-	productUnit, err := productUnitService.UpdateProductUnit(uint(idUint), req.ProductID, req.Name, req.Quantity, req.UnitPrice, req.Barcode, req.Description, userID)
+	productUnit, err := productUnitService.UpdateProductUnit(uint(idUint), req.ProductID, req.LocationID, req.Name, req.Quantity, req.UnitPrice, req.Barcode, req.Description, userID)
 	if err != nil {
 		log.Printf("[PRODUCT_UNIT] Update product unit failed - Product Unit ID: %d, User ID: %d, error: %v", idUint, userID, err)
 		statusCode, message := handleProductUnitError(err)

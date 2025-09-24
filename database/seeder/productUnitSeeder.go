@@ -39,6 +39,12 @@ func (s *ProductUnitSeeder) Seed(db *gorm.DB) error {
 		return nil
 	}
 
+	// Get some locations for reference
+	var locations []model.Location
+	if err := db.Limit(3).Find(&locations).Error; err != nil {
+		log.Println("No locations found, using nil for location")
+	}
+
 	// Get admin user for audit trail
 	var adminUser model.User
 	if err := db.Where("email = ?", "admin@example.com").First(&adminUser).Error; err != nil {
@@ -53,6 +59,7 @@ func (s *ProductUnitSeeder) Seed(db *gorm.DB) error {
 	productUnits := []model.ProductUnit{
 		{
 			ProductID:   products[0].ID,
+			LocationID:  getLocationID(locations, 0),
 			Name:        stringPtr("Piece"),
 			Quantity:    float64Ptr(1),
 			UnitPrice:   float64Ptr(15000),
@@ -62,6 +69,7 @@ func (s *ProductUnitSeeder) Seed(db *gorm.DB) error {
 		},
 		{
 			ProductID:   products[0].ID,
+			LocationID:  getLocationID(locations, 1),
 			Name:        stringPtr("Box"),
 			Quantity:    float64Ptr(12),
 			UnitPrice:   float64Ptr(170000),
@@ -71,6 +79,7 @@ func (s *ProductUnitSeeder) Seed(db *gorm.DB) error {
 		},
 		{
 			ProductID:   products[1].ID,
+			LocationID:  getLocationID(locations, 0),
 			Name:        stringPtr("Liter"),
 			Quantity:    float64Ptr(1),
 			UnitPrice:   float64Ptr(25000),
@@ -80,6 +89,7 @@ func (s *ProductUnitSeeder) Seed(db *gorm.DB) error {
 		},
 		{
 			ProductID:   products[1].ID,
+			LocationID:  getLocationID(locations, 2),
 			Name:        stringPtr("Gallon"),
 			Quantity:    float64Ptr(4),
 			UnitPrice:   float64Ptr(95000),
@@ -89,6 +99,7 @@ func (s *ProductUnitSeeder) Seed(db *gorm.DB) error {
 		},
 		{
 			ProductID:   products[2].ID,
+			LocationID:  getLocationID(locations, 0),
 			Name:        stringPtr("Kilogram"),
 			Quantity:    float64Ptr(1),
 			UnitPrice:   float64Ptr(50000),
@@ -103,6 +114,7 @@ func (s *ProductUnitSeeder) Seed(db *gorm.DB) error {
 		additionalUnits := []model.ProductUnit{
 			{
 				ProductID:   products[3].ID,
+				LocationID:  getLocationID(locations, 1),
 				Name:        stringPtr("Unit"),
 				Quantity:    float64Ptr(1),
 				UnitPrice:   float64Ptr(75000),
@@ -112,6 +124,7 @@ func (s *ProductUnitSeeder) Seed(db *gorm.DB) error {
 			},
 			{
 				ProductID:   products[3].ID,
+				LocationID:  getLocationID(locations, 2),
 				Name:        stringPtr("Dozen"),
 				Quantity:    float64Ptr(12),
 				UnitPrice:   float64Ptr(850000),
@@ -127,6 +140,7 @@ func (s *ProductUnitSeeder) Seed(db *gorm.DB) error {
 		moreUnits := []model.ProductUnit{
 			{
 				ProductID:   products[4].ID,
+				LocationID:  getLocationID(locations, 0),
 				Name:        stringPtr("Gram"),
 				Quantity:    float64Ptr(0.1),
 				UnitPrice:   float64Ptr(5000),
@@ -157,4 +171,14 @@ func stringPtr(s string) *string {
 
 func float64Ptr(f float64) *float64 {
 	return &f
+}
+
+func getLocationID(locations []model.Location, index int) uint {
+	if len(locations) == 0 {
+		return 0
+	}
+	if index >= len(locations) {
+		index = 0 // Default to first location if index out of bounds
+	}
+	return locations[index].ID
 }
