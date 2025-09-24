@@ -4,6 +4,7 @@ import (
 	"myapp/internal/routes/v1/auth"
 	"myapp/internal/routes/v1/brand"
 	"myapp/internal/routes/v1/category"
+	"myapp/internal/routes/v1/location"
 	"myapp/internal/routes/v1/product"
 	"myapp/internal/routes/v1/productbatch"
 	"myapp/internal/routes/v1/productunit"
@@ -31,6 +32,7 @@ func SetupV1Routes(app *fiber.App) {
 	productbatch.RegisterProductBatchRoutes(v1)
 	productunit.ProductUnitRoutes(v1)
 	productunittrack.ProductUnitTrackRoutes(v1)
+	location.LocationRoutes(v1)
 
 	// Future modules
 	// order.SetupOrderRoutes(v1)

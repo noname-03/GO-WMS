@@ -8,7 +8,7 @@ import (
 func Migrate() error {
 	log.Println("Starting database migration...")
 
-	err := DB.AutoMigrate(&model.User{}, &model.Role{}, &model.Brand{}, &model.Category{}, &model.Product{}, &model.ProductBatch{}, &model.ProductBatchTrack{}, &model.ProductUnit{}, &model.ProductUnitTrack{})
+	err := DB.AutoMigrate(&model.User{}, &model.Role{}, &model.Brand{}, &model.Category{}, &model.Product{}, &model.ProductBatch{}, &model.ProductBatchTrack{}, &model.ProductUnit{}, &model.ProductUnitTrack{}, &model.Location{})
 	if err != nil {
 		log.Println("Migration failed:", err)
 		return err

@@ -21,6 +21,7 @@ func GetAllSeeders() *SeederRegistry {
 	registry.Register(NewProductBatchTrackSeeder())
 	registry.Register(NewProductUnitSeeder())
 	registry.Register(NewProductUnitTrackSeeder())
+	registry.Register(NewLocationSeeder())
 	// registry.Register(NewWarehouseSeeder())
 
 	// Future seeders:
