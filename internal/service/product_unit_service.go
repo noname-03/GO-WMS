@@ -77,6 +77,16 @@ func (s *ProductUnitService) CreateProductUnit(productID uint, name *string, qua
 		}
 	}
 
+	if barcode != nil && *barcode != "" {
+		exists, err := s.productUnitRepo.CheckBarcodeProductUnitExists(productID, *barcode, 0)
+		if err != nil {
+			return nil, err
+		}
+		if exists {
+			return nil, errors.New("product unit with this barcode already exists for this product")
+		}
+	}
+
 	// Basic validation
 	if quantity != nil && *quantity < 0 {
 		return nil, errors.New("quantity cannot be negative")
@@ -156,6 +166,23 @@ func (s *ProductUnitService) UpdateProductUnit(id uint, productID uint, name *st
 			}
 			if exists {
 				return nil, errors.New("product unit name already in use for this product")
+			}
+		}
+	}
+
+	// Check if new name conflicts with existing product units for this product
+	if barcode != nil && *barcode != "" {
+		currentbarcode := ""
+		if oldBatch.Barcode != nil {
+			currentbarcode = *oldBatch.Barcode
+		}
+		if *barcode != currentbarcode || productID != oldBatch.ProductID {
+			exists, err := s.productUnitRepo.CheckBarcodeProductUnitExists(productID, *barcode, 0)
+			if err != nil {
+				return nil, err
+			}
+			if exists {
+				return nil, errors.New("product unit barcode already in use for this product")
 			}
 		}
 	}

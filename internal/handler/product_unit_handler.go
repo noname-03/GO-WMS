@@ -25,6 +25,14 @@ func handleProductUnitError(err error) (int, string) {
 		return 409, "Product unit name already exists for this product"
 	}
 
+	if errMsg == "product unit with this barcode already exists for this product" {
+		return 409, "Product unit with this barcode already exists for this product"
+	}
+
+	if errMsg == "product unit barcode already in use for this product" {
+		return 409, "Product unit barcode already in use for this product"
+	}
+
 	if errMsg == "product unit not found" {
 		return 404, "Product unit not found"
 	}

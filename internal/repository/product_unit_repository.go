@@ -79,6 +79,16 @@ func (r *ProductUnitRepository) CheckProductUnitExists(productID uint, name stri
 	return count > 0, result.Error
 }
 
+func (r *ProductUnitRepository) CheckBarcodeProductUnitExists(productID uint, barcode string, excludeID uint) (bool, error) {
+	var count int64
+	query := database.DB.Model(&model.ProductUnit{}).Where("product_id = ? AND barcode = ? AND deleted_at IS NULL", productID, barcode)
+	if excludeID != 0 {
+		query = query.Where("id != ?", excludeID)
+	}
+	result := query.Count(&count)
+	return count > 0, result.Error
+}
+
 func (r *ProductUnitRepository) CreateProductUnit(unit *model.ProductUnit) error {
 	return database.DB.Create(unit).Error
 }
