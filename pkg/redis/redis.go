@@ -40,6 +40,7 @@ func InitRedis() error {
 		port = "6379"
 	}
 
+	unixSocket := os.Getenv("REDIS_UNIX_SOCKET")
 	password := os.Getenv("REDIS_PASSWORD")
 
 	dbStr := os.Getenv("REDIS_DB")
@@ -59,12 +60,28 @@ func InitRedis() error {
 		}
 	}
 
-	// Create Redis client
-	Client = redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%s", host, port),
-		Password: password,
-		DB:       db,
-	})
+	// Create Redis client with Unix socket or TCP connection
+	var options *redis.Options
+	if unixSocket != "" {
+		// Use Unix socket connection
+		options = &redis.Options{
+			Network:  "unix",
+			Addr:     unixSocket,
+			Password: password,
+			DB:       db,
+		}
+		log.Printf("[REDIS] Connecting to Redis via Unix socket: %s", unixSocket)
+	} else {
+		// Use TCP connection
+		options = &redis.Options{
+			Addr:     fmt.Sprintf("%s:%s", host, port),
+			Password: password,
+			DB:       db,
+		}
+		log.Printf("[REDIS] Connecting to Redis via TCP: %s:%s", host, port)
+	}
+
+	Client = redis.NewClient(options)
 
 	// Test connection
 	_, err := Client.Ping(Ctx).Result()
@@ -74,7 +91,11 @@ func InitRedis() error {
 		return err
 	}
 
-	log.Printf("[REDIS] Successfully connected to Redis at %s:%s (DB: %d)", host, port, db)
+	if unixSocket != "" {
+		log.Printf("[REDIS] Successfully connected to Redis via Unix socket: %s (DB: %d)", unixSocket, db)
+	} else {
+		log.Printf("[REDIS] Successfully connected to Redis via TCP: %s:%s (DB: %d)", host, port, db)
+	}
 	log.Printf("[REDIS] Cache TTL set to %v", TTL)
 	return nil
 }
