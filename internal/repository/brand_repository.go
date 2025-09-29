@@ -23,6 +23,7 @@ func (r *BrandRepository) GetAllBrands() ([]model.Brand, error) {
 		var brands []model.Brand
 		if err := json.Unmarshal([]byte(cached), &brands); err == nil {
 			log.Printf("[REDIS] Cache hit for %s", cacheKey)
+			log.Printf("[REDIS] Cached brands data: %+v", brands)
 			return brands, nil
 		}
 	}
