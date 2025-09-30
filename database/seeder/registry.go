@@ -10,18 +10,18 @@ import (
 func GetAllSeeders() *SeederRegistry {
 	registry := NewSeederRegistry()
 
-	// Register all seeders here
+	// Register all seeders here in proper dependency order
 	// Add new seeders to this list to auto-run them
-	registry.Register(NewUserSeeder())
-	registry.Register(NewRoleSeeder())
-	registry.Register(NewBrandSeeder())
-	registry.Register(NewCategorySeeder())
-	registry.Register(NewProductSeeder())
-	registry.Register(NewProductBatchSeeder())
+	registry.Register(NewUserSeeder())         // Base users first
+	registry.Register(NewRoleSeeder())         // Roles
+	registry.Register(NewBrandSeeder())        // Product dependencies
+	registry.Register(NewCategorySeeder())     // Product dependencies
+	registry.Register(NewLocationSeeder())     // Location must be before ProductUnit
+	registry.Register(NewProductSeeder())      // Products
+	registry.Register(NewProductBatchSeeder()) // Product batches must be before ProductUnit
 	registry.Register(NewProductBatchTrackSeeder())
-	registry.Register(NewProductUnitSeeder())
+	registry.Register(NewProductUnitSeeder()) // ProductUnit depends on Location & ProductBatch
 	registry.Register(NewProductUnitTrackSeeder())
-	registry.Register(NewLocationSeeder())
 	registry.Register(NewProductStockSeeder())
 	registry.Register(NewProductStockTrackSeeder())
 	registry.Register(NewProductItemSeeder())

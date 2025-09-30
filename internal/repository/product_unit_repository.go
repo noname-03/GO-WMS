@@ -10,16 +10,29 @@ type ProductUnitRepository struct{}
 
 // productUnitResponse struct untuk response product unit
 type productUnitResponse struct {
-	ID           uint     `json:"id"`
-	ProductID    uint     `json:"productId"`
-	ProductName  string   `json:"productName"`
-	LocationID   uint     `json:"locationId"`
-	LocationName string   `json:"locationName"`
-	Name         *string  `json:"name"`
-	Quantity     *float64 `json:"quantity"`
-	UnitPrice    *string  `json:"unitPrice"`
-	Barcode      *string  `json:"barcode"`
-	Description  *string  `json:"description"`
+	ID               uint     `json:"id"`
+	ProductID        uint     `json:"productId"`
+	ProductName      string   `json:"productName"`
+	LocationID       uint     `json:"locationId"`
+	LocationName     string   `json:"locationName"`
+	ProductBatchID   uint     `json:"productBatchId"`
+	ProductBatchName string   `json:"productBatchCode"`
+	Name             *string  `json:"name"`
+	Quantity         *float64 `json:"quantity"`
+	UnitPrice        *string  `json:"unitPrice"`
+	Barcode          *string  `json:"barcode"`
+	Description      *string  `json:"description"`
+}
+
+type productUnitOriResponse struct {
+	ProductId      uint     `json:"product_id"`
+	LocationId     uint     `json:"location_id"`
+	ProductBatchId uint     `json:"product_batch_id"`
+	Name           *string  `json:"name"`
+	Quantity       *float64 `json:"quantity"`
+	UnitPrice      *float64 `json:"unit_price"`
+	Barcode        *string  `json:"barcode"`
+	Description    *string  `json:"description"`
 }
 
 func NewProductUnitRepository() *ProductUnitRepository {
@@ -29,9 +42,10 @@ func NewProductUnitRepository() *ProductUnitRepository {
 func (r *ProductUnitRepository) GetAllProductUnits() ([]productUnitResponse, error) {
 	var units []productUnitResponse
 	result := database.DB.Table("product_units pu").
-		Select("pu.id, pu.product_id, p.name as product_name, pu.name, pu.quantity, pu.unit_price, pu.barcode, pu.description, l.id as location_id, l.name as location_name").
+		Select("pu.id, pu.product_id, p.name as product_name, pu.location_id, l.name as location_name, pu.product_batch_id, pb.code_batch as product_batch_name, pu.name, pu.quantity, pu.unit_price, pu.barcode, pu.description").
 		Joins("LEFT JOIN products p ON pu.product_id = p.id AND p.deleted_at IS NULL").
 		Joins("LEFT JOIN locations l ON pu.location_id = l.id AND l.deleted_at IS NULL").
+		Joins("LEFT JOIN product_batches pb ON pu.product_batch_id = pb.id AND pb.deleted_at IS NULL").
 		Where("pu.deleted_at IS NULL").
 		Order("pu.created_at DESC").
 		Find(&units)
@@ -41,9 +55,10 @@ func (r *ProductUnitRepository) GetAllProductUnits() ([]productUnitResponse, err
 func (r *ProductUnitRepository) GetProductUnitsByProduct(productID uint) ([]productUnitResponse, error) {
 	var units []productUnitResponse
 	result := database.DB.Table("product_units pu").
-		Select("pu.id, pu.product_id, p.name as product_name, pu.name, pu.quantity, pu.unit_price, pu.barcode, pu.description, l.id as location_id, l.name as location_name").
+		Select("pu.id, pu.product_id, p.name as product_name, pu.location_id, l.name as location_name, pu.product_batch_id, pb.code_batch as product_batch_name, pu.name, pu.quantity, pu.unit_price, pu.barcode, pu.description").
 		Joins("LEFT JOIN products p ON pu.product_id = p.id AND p.deleted_at IS NULL").
 		Joins("LEFT JOIN locations l ON pu.location_id = l.id AND l.deleted_at IS NULL").
+		Joins("LEFT JOIN product_batches pb ON pu.product_batch_id = pb.id AND pb.deleted_at IS NULL").
 		Where("pu.deleted_at IS NULL AND pu.product_id = ?", productID).
 		Order("pu.created_at DESC").
 		Find(&units)
@@ -53,9 +68,10 @@ func (r *ProductUnitRepository) GetProductUnitsByProduct(productID uint) ([]prod
 func (r *ProductUnitRepository) GetProductUnitByID(id uint) (productUnitResponse, error) {
 	var unit productUnitResponse
 	result := database.DB.Table("product_units pu").
-		Select("pu.id, pu.product_id, p.name as product_name, pu.name, pu.quantity, pu.unit_price, pu.barcode, pu.description, l.id as location_id, l.name as location_name").
+		Select("pu.id, pu.product_id, p.name as product_name, pu.location_id, l.name as location_name, pu.product_batch_id, pb.code_batch as product_batch_name, pu.name, pu.quantity, pu.unit_price, pu.barcode, pu.description").
 		Joins("LEFT JOIN products p ON pu.product_id = p.id AND p.deleted_at IS NULL").
 		Joins("LEFT JOIN locations l ON pu.location_id = l.id AND l.deleted_at IS NULL").
+		Joins("LEFT JOIN product_batches pb ON pu.product_batch_id = pb.id AND pb.deleted_at IS NULL").
 		Where("pu.deleted_at IS NULL AND pu.id = ?", id).
 		First(&unit)
 	return unit, result.Error
@@ -71,6 +87,12 @@ func (r *ProductUnitRepository) GetProductUnitByIDModel(id uint) (model.ProductU
 func (r *ProductUnitRepository) CheckProductExists(productID uint) (bool, error) {
 	var count int64
 	result := database.DB.Model(&model.Product{}).Where("id = ? AND deleted_at IS NULL", productID).Count(&count)
+	return count > 0, result.Error
+}
+
+func (r *ProductUnitRepository) CheckProductBatchExists(productBatchID uint) (bool, error) {
+	var count int64
+	result := database.DB.Model(&model.ProductBatch{}).Where("id = ? AND deleted_at IS NULL", productBatchID).Count(&count)
 	return count > 0, result.Error
 }
 
@@ -130,12 +152,19 @@ func (r *ProductUnitRepository) DeleteProductUnitWithAudit(id uint, userID uint)
 	return database.DB.Model(&model.ProductUnit{}).Where("id = ?", id).Update("deleted_at", time.Now()).Error
 }
 
-func (r *ProductUnitRepository) CheckBarcodeExists(barcode string, excludeID uint) (bool, error) {
+func (r *ProductUnitRepository) CheckBarcodeExists(barcode string) (bool, error) {
 	var count int64
 	query := database.DB.Model(&model.ProductUnit{}).Where("barcode = ? AND deleted_at IS NULL", barcode)
-	if excludeID != 0 {
-		query = query.Where("id != ?", excludeID)
-	}
 	result := query.Count(&count)
 	return count > 0, result.Error
+}
+
+// GetProductUnitByBarcode returns ProductUnit data based on barcode
+func (r *ProductUnitRepository) GetProductUnitByBarcode(barcode string) (productUnitOriResponse, error) {
+	var unit productUnitOriResponse
+	result := database.DB.Table("product_units pu").
+		Select("pu.id, pu.product_id, pu.location_id, pu.product_batch_id, pu.name, pu.quantity, pu.unit_price, pu.barcode, pu.description").
+		Where("pu.barcode = ? AND pu.deleted_at IS NULL", barcode).
+		First(&unit)
+	return unit, result.Error
 }

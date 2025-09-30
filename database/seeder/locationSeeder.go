@@ -41,7 +41,7 @@ func (s *LocationSeeder) Seed(db *gorm.DB) error {
 
 	// Get admin user for audit trail
 	var adminUser model.User
-	if err := db.Where("email = ?", "admin@example.com").First(&adminUser).Error; err != nil {
+	if err := db.Where("email = ?", "admin@wms.com").First(&adminUser).Error; err != nil {
 		log.Println("Admin user not found, using first user for audit trail")
 		if len(users) > 0 {
 			adminUser = users[0]
@@ -87,7 +87,7 @@ func (s *LocationSeeder) Seed(db *gorm.DB) error {
 			UserIns:     userID,
 		},
 		{
-			UserID:      users[2].ID,
+			UserID:      users[1].ID,
 			Name:        "Gudang Regional Medan",
 			Address:     stringPtrLocation("Jl. Gatot Subroto No. 654, Medan"),
 			PhoneNumber: stringPtrLocation("061-4444555"),

@@ -42,12 +42,28 @@ func (s *ProductUnitSeeder) Seed(db *gorm.DB) error {
 	// Get some locations for reference
 	var locations []model.Location
 	if err := db.Limit(3).Find(&locations).Error; err != nil {
-		log.Println("No locations found, using nil for location")
+		log.Printf("Error finding locations: %v", err)
+		return err
 	}
 
-	// Get admin user for audit trail
+	if len(locations) == 0 {
+		log.Println("No locations found, ProductUnit seeding requires locations. Please seed locations first.")
+		return nil
+	}
+
+	// Get some product batch for reference
+	var productBatches []model.ProductBatch
+	if err := db.Limit(3).Find(&productBatches).Error; err != nil {
+		log.Printf("Error finding product batches: %v", err)
+		return err
+	}
+
+	if len(productBatches) == 0 {
+		log.Println("No product batches found, ProductUnit seeding requires product batches. Please seed product batches first.")
+		return nil
+	} // Get admin user for audit trail
 	var adminUser model.User
-	if err := db.Where("email = ?", "admin@example.com").First(&adminUser).Error; err != nil {
+	if err := db.Where("email = ?", "admin@wms.com").First(&adminUser).Error; err != nil {
 		log.Println("Admin user not found, using nil for audit trail")
 	}
 
@@ -58,54 +74,59 @@ func (s *ProductUnitSeeder) Seed(db *gorm.DB) error {
 
 	productUnits := []model.ProductUnit{
 		{
-			ProductID:   products[0].ID,
-			LocationID:  getLocationID(locations, 0),
-			Name:        stringPtr("Piece"),
-			Quantity:    float64Ptr(1),
-			UnitPrice:   float64Ptr(15000),
-			Barcode:     stringPtr("8991234567890"),
-			Description: stringPtr("Single unit piece"),
-			UserIns:     userID,
+			ProductID:      products[0].ID,
+			LocationID:     getLocationID(locations, 0),
+			ProductBatchID: getProductBatchID(productBatches, 0),
+			Name:           stringPtr("Piece"),
+			Quantity:       float64Ptr(1),
+			UnitPrice:      float64Ptr(15000),
+			Barcode:        stringPtr("8991234567890"),
+			Description:    stringPtr("Single unit piece"),
+			UserIns:        userID,
 		},
 		{
-			ProductID:   products[0].ID,
-			LocationID:  getLocationID(locations, 1),
-			Name:        stringPtr("Box"),
-			Quantity:    float64Ptr(12),
-			UnitPrice:   float64Ptr(170000),
-			Barcode:     stringPtr("8991234567891"),
-			Description: stringPtr("Box of 12 pieces"),
-			UserIns:     userID,
+			ProductID:      products[0].ID,
+			LocationID:     getLocationID(locations, 1),
+			ProductBatchID: getProductBatchID(productBatches, 0),
+			Name:           stringPtr("Box"),
+			Quantity:       float64Ptr(12),
+			UnitPrice:      float64Ptr(170000),
+			Barcode:        stringPtr("8991234567891"),
+			Description:    stringPtr("Box of 12 pieces"),
+			UserIns:        userID,
 		},
 		{
-			ProductID:   products[1].ID,
-			LocationID:  getLocationID(locations, 0),
-			Name:        stringPtr("Liter"),
-			Quantity:    float64Ptr(1),
-			UnitPrice:   float64Ptr(25000),
-			Barcode:     stringPtr("8991234567892"),
-			Description: stringPtr("1 liter bottle"),
-			UserIns:     userID,
+			ProductID:      products[1].ID,
+			LocationID:     getLocationID(locations, 0),
+			ProductBatchID: getProductBatchID(productBatches, 0),
+			Name:           stringPtr("Liter"),
+			Quantity:       float64Ptr(1),
+			UnitPrice:      float64Ptr(25000),
+			Barcode:        stringPtr("8991234567892"),
+			Description:    stringPtr("1 liter bottle"),
+			UserIns:        userID,
 		},
 		{
-			ProductID:   products[1].ID,
-			LocationID:  getLocationID(locations, 2),
-			Name:        stringPtr("Gallon"),
-			Quantity:    float64Ptr(4),
-			UnitPrice:   float64Ptr(95000),
-			Barcode:     stringPtr("8991234567893"),
-			Description: stringPtr("4 liter gallon"),
-			UserIns:     userID,
+			ProductID:      products[1].ID,
+			LocationID:     getLocationID(locations, 2),
+			ProductBatchID: getProductBatchID(productBatches, 1),
+			Name:           stringPtr("Gallon"),
+			Quantity:       float64Ptr(4),
+			UnitPrice:      float64Ptr(95000),
+			Barcode:        stringPtr("8991234567893"),
+			Description:    stringPtr("4 liter gallon"),
+			UserIns:        userID,
 		},
 		{
-			ProductID:   products[2].ID,
-			LocationID:  getLocationID(locations, 0),
-			Name:        stringPtr("Kilogram"),
-			Quantity:    float64Ptr(1),
-			UnitPrice:   float64Ptr(50000),
-			Barcode:     stringPtr("8991234567894"),
-			Description: stringPtr("1 kilogram pack"),
-			UserIns:     userID,
+			ProductID:      products[2].ID,
+			LocationID:     getLocationID(locations, 0),
+			ProductBatchID: getProductBatchID(productBatches, 2),
+			Name:           stringPtr("Kilogram"),
+			Quantity:       float64Ptr(1),
+			UnitPrice:      float64Ptr(50000),
+			Barcode:        stringPtr("8991234567894"),
+			Description:    stringPtr("1 kilogram pack"),
+			UserIns:        userID,
 		},
 	}
 
@@ -113,24 +134,26 @@ func (s *ProductUnitSeeder) Seed(db *gorm.DB) error {
 	if len(products) > 3 {
 		additionalUnits := []model.ProductUnit{
 			{
-				ProductID:   products[3].ID,
-				LocationID:  getLocationID(locations, 1),
-				Name:        stringPtr("Unit"),
-				Quantity:    float64Ptr(1),
-				UnitPrice:   float64Ptr(75000),
-				Barcode:     stringPtr("8991234567895"),
-				Description: stringPtr("Single unit"),
-				UserIns:     userID,
+				ProductID:      products[3].ID,
+				LocationID:     getLocationID(locations, 1),
+				ProductBatchID: getProductBatchID(productBatches, 0),
+				Name:           stringPtr("Unit"),
+				Quantity:       float64Ptr(1),
+				UnitPrice:      float64Ptr(75000),
+				Barcode:        stringPtr("8991234567895"),
+				Description:    stringPtr("Single unit"),
+				UserIns:        userID,
 			},
 			{
-				ProductID:   products[3].ID,
-				LocationID:  getLocationID(locations, 2),
-				Name:        stringPtr("Dozen"),
-				Quantity:    float64Ptr(12),
-				UnitPrice:   float64Ptr(850000),
-				Barcode:     stringPtr("8991234567896"),
-				Description: stringPtr("Dozen pack"),
-				UserIns:     userID,
+				ProductID:      products[3].ID,
+				LocationID:     getLocationID(locations, 2),
+				ProductBatchID: getProductBatchID(productBatches, 1),
+				Name:           stringPtr("Dozen"),
+				Quantity:       float64Ptr(12),
+				UnitPrice:      float64Ptr(850000),
+				Barcode:        stringPtr("8991234567896"),
+				Description:    stringPtr("Dozen pack"),
+				UserIns:        userID,
 			},
 		}
 		productUnits = append(productUnits, additionalUnits...)
@@ -139,14 +162,15 @@ func (s *ProductUnitSeeder) Seed(db *gorm.DB) error {
 	if len(products) > 4 {
 		moreUnits := []model.ProductUnit{
 			{
-				ProductID:   products[4].ID,
-				LocationID:  getLocationID(locations, 0),
-				Name:        stringPtr("Gram"),
-				Quantity:    float64Ptr(0.1),
-				UnitPrice:   float64Ptr(5000),
-				Barcode:     stringPtr("8991234567897"),
-				Description: stringPtr("100 gram pack"),
-				UserIns:     userID,
+				ProductID:      products[4].ID,
+				LocationID:     getLocationID(locations, 0),
+				ProductBatchID: getProductBatchID(productBatches, 2),
+				Name:           stringPtr("Gram"),
+				Quantity:       float64Ptr(0.1),
+				UnitPrice:      float64Ptr(5000),
+				Barcode:        stringPtr("8991234567897"),
+				Description:    stringPtr("100 gram pack"),
+				UserIns:        userID,
 			},
 		}
 		productUnits = append(productUnits, moreUnits...)
@@ -175,10 +199,22 @@ func float64Ptr(f float64) *float64 {
 
 func getLocationID(locations []model.Location, index int) uint {
 	if len(locations) == 0 {
-		return 0
+		log.Printf("⚠️  Warning: No locations available, returning 1 as default")
+		return 1 // Default to first location ID (assuming location with ID 1 exists)
 	}
 	if index >= len(locations) {
 		index = 0 // Default to first location if index out of bounds
 	}
 	return locations[index].ID
+}
+
+func getProductBatchID(productBatches []model.ProductBatch, index int) uint {
+	if len(productBatches) == 0 {
+		log.Printf("⚠️  Warning: No product batches available, returning 1 as default")
+		return 1 // Default to first batch ID (assuming batch with ID 1 exists)
+	}
+	if index >= len(productBatches) {
+		index = 0 // Default to first batch if index out of bounds
+	}
+	return productBatches[index].ID
 }

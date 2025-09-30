@@ -17,6 +17,9 @@ func (u *ProductUnitTrackingUtils) GenerateCreateDescriptionProductUnit(productU
 	if productUnit.LocationID != 0 {
 		description += " with location ID: " + fmt.Sprintf("%d", productUnit.LocationID)
 	}
+	if productUnit.ProductBatchID != 0 {
+		description += " with product batch ID: " + fmt.Sprintf("%d", productUnit.ProductBatchID)
+	}
 	if productUnit.Name != nil {
 		description += " with name: " + *productUnit.Name
 	}
@@ -26,7 +29,9 @@ func (u *ProductUnitTrackingUtils) GenerateCreateDescriptionProductUnit(productU
 	if productUnit.UnitPrice != nil {
 		description += ", unit price: " + u.formatFloat(*productUnit.UnitPrice)
 	}
-	description += ", barcode: " + *productUnit.Barcode
+	if productUnit.Barcode != nil {
+		description += ", barcode: " + *productUnit.Barcode
+	}
 
 	return description
 }
@@ -45,6 +50,12 @@ func (u *ProductUnitTrackingUtils) GenerateUpdateDescriptionFromChangesProductUn
 	if newLocationID, exists := updateData["location_id"]; exists {
 		if newLocationID != oldBatch.LocationID {
 			changes = append(changes, fmt.Sprintf("changed location from ID %d to ID %d", oldBatch.LocationID, newLocationID))
+		}
+	}
+
+	if newProductBatchID, exists := updateData["product_batch_id"]; exists {
+		if newProductBatchID != oldBatch.ProductBatchID {
+			changes = append(changes, fmt.Sprintf("changed product batch from ID %d to ID %d", oldBatch.ProductBatchID, newProductBatchID))
 		}
 	}
 
@@ -124,10 +135,10 @@ func (u *ProductUnitTrackingUtils) GenerateUpdateDescriptionFromChangesProductUn
 	}
 
 	if len(changes) == 0 {
-		return "Product batch updated (no field changes detected)"
+		return "Product unit updated (no field changes detected)"
 	}
 
-	description := "Product batch updated: "
+	description := "Product unit updated: "
 	for i, change := range changes {
 		if i > 0 {
 			description += ", "

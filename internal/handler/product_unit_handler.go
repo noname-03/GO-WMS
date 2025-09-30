@@ -29,6 +29,22 @@ func handleProductUnitError(err error) (int, string) {
 		return 409, "Barcode already exists for this product and location"
 	}
 
+	if errMsg == "barcode already exists for another product" {
+		return 409, "barcode already exists for another product"
+	}
+
+	if errMsg == "product unit with same name and location already exists" {
+		return 409, "product unit with same name and location already exists"
+	}
+
+	if errMsg == "product unit name already in use for this product and location" {
+		return 409, "product unit name already in use for this product and location"
+	}
+
+	if errMsg == "product unit with this name already exists for this product and location" {
+		return 409, "product unit with this name already exists for this product and location"
+	}
+
 	if errMsg == "product unit barcode already in use for this product" {
 		return 409, "Product unit barcode already in use for this product"
 	}
@@ -62,23 +78,25 @@ func handleProductUnitError(err error) (int, string) {
 }
 
 type CreateProductUnitRequest struct {
-	ProductID   uint     `json:"productId" validate:"required"`
-	LocationID  uint     `json:"locationId" validate:"required"`
-	Name        *string  `json:"name"`
-	Quantity    *float64 `json:"quantity"`
-	UnitPrice   *float64 `json:"unitPrice"`
-	Barcode     *string  `json:"barcode"`
-	Description *string  `json:"description"`
+	ProductID      uint     `json:"productId" validate:"required"`
+	LocationID     uint     `json:"locationId" validate:"required"`
+	ProductBatchID uint     `json:"productBatchId" validate:"required"`
+	Name           *string  `json:"name"`
+	Quantity       *float64 `json:"quantity"`
+	UnitPrice      *float64 `json:"unitPrice"`
+	Barcode        *string  `json:"barcode"`
+	Description    *string  `json:"description"`
 }
 
 type UpdateProductUnitRequest struct {
-	ProductID   uint     `json:"productId" validate:"required"`
-	LocationID  uint     `json:"locationId" validate:"required"`
-	Name        *string  `json:"name"`
-	Quantity    *float64 `json:"quantity"`
-	UnitPrice   *float64 `json:"unitPrice"`
-	Barcode     *string  `json:"barcode"`
-	Description *string  `json:"description"`
+	ProductID      uint     `json:"productId" validate:"required"`
+	LocationID     uint     `json:"locationId" validate:"required"`
+	ProductBatchID uint     `json:"productBatchId" validate:"required"`
+	Name           *string  `json:"name"`
+	Quantity       *float64 `json:"quantity"`
+	UnitPrice      *float64 `json:"unitPrice"`
+	Barcode        *string  `json:"barcode"`
+	Description    *string  `json:"description"`
 }
 
 func GetProductUnits(c *fiber.Ctx) error {
@@ -151,9 +169,9 @@ func CreateProductUnit(c *fiber.Ctx) error {
 		return helper.Fail(c, 401, "User not authenticated", "Failed to get user ID from token")
 	}
 
-	log.Printf("[PRODUCT_UNIT] Creating product unit with audit - User ID: %d, Product ID: %d", userID, req.ProductID)
+	log.Printf("[PRODUCT_UNIT] Creating product unit with audit - User ID: %d, Product ID: %d, Product Batch ID: %d", userID, req.ProductID, req.ProductBatchID)
 
-	productUnit, err := productUnitService.CreateProductUnit(req.ProductID, req.LocationID, req.Name, req.Quantity, req.UnitPrice, req.Barcode, req.Description, userID)
+	productUnit, err := productUnitService.CreateProductUnit(req.ProductID, req.LocationID, req.ProductBatchID, req.Name, req.Quantity, req.UnitPrice, req.Barcode, req.Description, userID)
 	if err != nil {
 		log.Printf("[PRODUCT_UNIT] Create product unit failed - Product ID: %d, User ID: %d, error: %v", req.ProductID, userID, err)
 		statusCode, message := handleProductUnitError(err)
@@ -187,9 +205,9 @@ func UpdateProductUnit(c *fiber.Ctx) error {
 		return helper.Fail(c, 401, "User not authenticated", "Failed to get user ID from token")
 	}
 
-	log.Printf("[PRODUCT_UNIT] Updating product unit with audit - Product Unit ID: %d, User ID: %d", idUint, userID)
+	log.Printf("[PRODUCT_UNIT] Updating product unit with audit - Product Unit ID: %d, User ID: %d, Product Batch ID: %d", idUint, userID, req.ProductBatchID)
 
-	productUnit, err := productUnitService.UpdateProductUnit(uint(idUint), req.ProductID, req.LocationID, req.Name, req.Quantity, req.UnitPrice, req.Barcode, req.Description, userID)
+	productUnit, err := productUnitService.UpdateProductUnit(uint(idUint), req.ProductID, req.LocationID, req.ProductBatchID, req.Name, req.Quantity, req.UnitPrice, req.Barcode, req.Description, userID)
 	if err != nil {
 		log.Printf("[PRODUCT_UNIT] Update product unit failed - Product Unit ID: %d, User ID: %d, error: %v", idUint, userID, err)
 		statusCode, message := handleProductUnitError(err)

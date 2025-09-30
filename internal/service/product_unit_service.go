@@ -4,6 +4,7 @@ import (
 	"errors"
 	"myapp/internal/model"
 	"myapp/internal/repository"
+	"strings"
 )
 
 type ProductUnitService struct {
@@ -48,13 +49,17 @@ func (s *ProductUnitService) GetProductUnitByID(id uint) (interface{}, error) {
 	return unit, nil
 }
 
-func (s *ProductUnitService) CreateProductUnit(productID uint, locationID uint, name *string, quantity *float64, unitPrice *float64, barcode *string, description *string, userID uint) (interface{}, error) {
+func (s *ProductUnitService) CreateProductUnit(productID uint, locationID uint, productBatchID uint, name *string, quantity *float64, unitPrice *float64, barcode *string, description *string, userID uint) (interface{}, error) {
 	if productID == 0 {
 		return nil, errors.New("product ID is required")
 	}
 
 	if locationID == 0 {
 		return nil, errors.New("location ID is required")
+	}
+
+	if productBatchID == 0 {
+		return nil, errors.New("product batch ID is required")
 	}
 
 	if userID == 0 {
@@ -70,6 +75,15 @@ func (s *ProductUnitService) CreateProductUnit(productID uint, locationID uint, 
 		return nil, errors.New("product not found")
 	}
 
+	// Check if product batch exists
+	batchExists, err := s.productUnitRepo.CheckProductBatchExists(productBatchID)
+	if err != nil {
+		return nil, err
+	}
+	if !batchExists {
+		return nil, errors.New("product batch not found")
+	}
+
 	// Check if product unit with same name exists for this product and location (if name is provided)
 	if name != nil && *name != "" {
 		exists, err := s.productUnitRepo.CheckProductUnitExists(productID, locationID, *name, 0)
@@ -82,45 +96,52 @@ func (s *ProductUnitService) CreateProductUnit(productID uint, locationID uint, 
 	}
 
 	// Check if barcode exists for this product and location (if barcode is provided)
+	// if barcode != nil && *barcode != "" {
+	// 	exists, err := s.productUnitRepo.CheckBarcodeProductUnitExists(productID, locationID, *barcode)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	if exists {
+	// 		return nil, errors.New("barcode already exists for this product and location")
+	// 	}
+	// }
+
 	if barcode != nil && *barcode != "" {
-		exists, err := s.productUnitRepo.CheckBarcodeProductUnitExists(productID, locationID, *barcode, 0)
-		if err != nil {
-			return nil, err
-		}
-		if exists {
-			return nil, errors.New("barcode already exists for this product and location")
-		}
-	}
+		unit, err := s.productUnitRepo.GetProductUnitByBarcode(*barcode)
+		if err == nil {
+			// Barcode sudah ada, cek apakah product_id sama
+			if unit.ProductId != productID {
+				return nil, errors.New("barcode already exists for another product")
+			}
 
-	// Check if barcode exists for this product and location (if barcode is provided)
-	if barcode != nil && *barcode != "" {
-		exists, err := s.productUnitRepo.CheckBarcodeProductUnitExists(productID, locationID, *barcode, 0)
-		if err != nil {
-			return nil, err
-		}
-		if exists {
-			return nil, errors.New("barcode already exists for this product and location")
-		}
-	}
+			// Product_id sama, cek apakah kombinasi name dan location_id sama
+			unitName := ""
+			if unit.Name != nil {
+				unitName = strings.ToLower(*unit.Name)
+			}
 
-	// Basic validation
-	if quantity != nil && *quantity < 0 {
-		return nil, errors.New("quantity cannot be negative")
-	}
+			currentName := ""
+			if name != nil {
+				currentName = strings.ToLower(*name)
+			}
 
-	if unitPrice != nil && *unitPrice < 0 {
-		return nil, errors.New("UnitPrice cannot be negative")
+			if unit.LocationId == locationID && unitName == currentName {
+				return nil, errors.New("product unit with same name and location already exists")
+			}
+		}
+		// Jika err != nil berarti barcode tidak ditemukan, jadi aman untuk create
 	}
 
 	productUnit := &model.ProductUnit{
-		ProductID:   productID,
-		LocationID:  locationID,
-		Name:        name,
-		Quantity:    quantity,
-		UnitPrice:   unitPrice,
-		Barcode:     barcode,
-		Description: description,
-		UserIns:     &userID,
+		ProductID:      productID,
+		LocationID:     locationID,
+		ProductBatchID: productBatchID,
+		Name:           name,
+		Quantity:       quantity,
+		UnitPrice:      unitPrice,
+		Barcode:        barcode,
+		Description:    description,
+		UserIns:        &userID,
 	}
 
 	err = s.productUnitRepo.CreateProductUnit(productUnit)
@@ -144,13 +165,17 @@ func (s *ProductUnitService) CreateProductUnit(productID uint, locationID uint, 
 	return res, nil
 }
 
-func (s *ProductUnitService) UpdateProductUnit(id uint, productID uint, locationID uint, name *string, quantity *float64, UnitPrice *float64, barcode *string, description *string, userID uint) (interface{}, error) {
+func (s *ProductUnitService) UpdateProductUnit(id uint, productID uint, locationID uint, productBatchID uint, name *string, quantity *float64, UnitPrice *float64, barcode *string, description *string, userID uint) (interface{}, error) {
 	if id == 0 {
 		return nil, errors.New("invalid product unit ID")
 	}
 
 	if locationID == 0 {
 		return nil, errors.New("invalid location ID")
+	}
+
+	if productBatchID == 0 {
+		return nil, errors.New("product batch ID is required")
 	}
 
 	if userID == 0 {
@@ -174,6 +199,17 @@ func (s *ProductUnitService) UpdateProductUnit(id uint, productID uint, location
 		}
 	}
 
+	// If product batch ID is being changed, check if new product batch exists
+	if productBatchID != 0 && productBatchID != oldBatch.ProductBatchID {
+		batchExists, err := s.productUnitRepo.CheckProductBatchExists(productBatchID)
+		if err != nil {
+			return nil, err
+		}
+		if !batchExists {
+			return nil, errors.New("product batch not found")
+		}
+	}
+
 	// Use existing product if not provided
 	if productID == 0 {
 		productID = oldBatch.ProductID
@@ -181,6 +217,10 @@ func (s *ProductUnitService) UpdateProductUnit(id uint, productID uint, location
 
 	if locationID == 0 {
 		locationID = oldBatch.LocationID
+	}
+
+	if productBatchID == 0 {
+		productBatchID = oldBatch.ProductBatchID
 	}
 
 	// Check if new name conflicts with existing product units for this product
@@ -201,20 +241,52 @@ func (s *ProductUnitService) UpdateProductUnit(id uint, productID uint, location
 	}
 
 	// Check if new name conflicts with existing product units for this product
+	// if barcode != nil && *barcode != "" {
+	// 	currentbarcode := ""
+	// 	if oldBatch.Barcode != nil {
+	// 		currentbarcode = *oldBatch.Barcode
+	// 	}
+	// 	if *barcode != currentbarcode || productID != oldBatch.ProductID {
+	// 		exists, err := s.productUnitRepo.CheckBarcodeProductUnitExists(productID, locationID, *barcode)
+	// 		if err != nil {
+	// 			return nil, err
+	// 		}
+	// 		if exists {
+	// 			return nil, errors.New("product unit barcode already in use for this product and location")
+	// 		}
+	// 	}
+	// }
+
 	if barcode != nil && *barcode != "" {
 		currentbarcode := ""
 		if oldBatch.Barcode != nil {
 			currentbarcode = *oldBatch.Barcode
 		}
 		if *barcode != currentbarcode || productID != oldBatch.ProductID {
-			exists, err := s.productUnitRepo.CheckBarcodeProductUnitExists(productID, locationID, *barcode, 0)
-			if err != nil {
-				return nil, err
-			}
-			if exists {
-				return nil, errors.New("product unit barcode already in use for this product and location")
+			unit, err := s.productUnitRepo.GetProductUnitByBarcode(*barcode)
+			if err == nil {
+				// Barcode sudah ada, cek apakah product_id sama
+				if unit.ProductId != productID {
+					return nil, errors.New("barcode already exists for another product")
+				}
+
+				// Product_id sama, cek apakah kombinasi name dan location_id sama
+				unitName := ""
+				if unit.Name != nil {
+					unitName = strings.ToLower(*unit.Name)
+				}
+
+				currentName := ""
+				if name != nil {
+					currentName = strings.ToLower(*name)
+				}
+
+				if unit.LocationId == locationID && unitName == currentName {
+					return nil, errors.New("product unit with same name and location already exists")
+				}
 			}
 		}
+		// Jika err != nil berarti barcode tidak ditemukan, jadi aman untuk create
 	}
 
 	// Basic validation
@@ -230,6 +302,12 @@ func (s *ProductUnitService) UpdateProductUnit(id uint, productID uint, location
 	updateData := make(map[string]interface{})
 	if productID != oldBatch.ProductID {
 		updateData["product_id"] = productID
+	}
+	if locationID != oldBatch.LocationID {
+		updateData["location_id"] = locationID
+	}
+	if productBatchID != oldBatch.ProductBatchID {
+		updateData["product_batch_id"] = productBatchID
 	}
 	if name != nil {
 		updateData["name"] = name
