@@ -241,3 +241,43 @@ func DeleteLocation(c *fiber.Ctx) error {
 	log.Printf("[LOCATION] Delete location successful - Location ID: %d", idUint)
 	return helper.Success(c, 200, "Location deleted successfully", nil)
 }
+
+func GetDeletedLocations(c *fiber.Ctx) error {
+	log.Printf("[LOCATION] Get deleted locations request from IP: %s", c.IP())
+
+	locations, err := locationService.GetDeletedLocations()
+	if err != nil {
+		log.Printf("[LOCATION] Get deleted locations failed - error: %v", err)
+		return helper.Fail(c, 500, "Failed to fetch deleted locations", err.Error())
+	}
+
+	log.Printf("[LOCATION] Get deleted locations successful")
+	return helper.Success(c, 200, "Success", locations)
+}
+
+func RestoreLocation(c *fiber.Ctx) error {
+	id := c.Params("id")
+	log.Printf("[LOCATION] Restore location request - ID: %s from IP: %s", id, c.IP())
+
+	idUint, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		log.Printf("[LOCATION] Restore location failed - Invalid ID: %s, error: %v", id, err)
+		return helper.Fail(c, 400, "Invalid location ID", err.Error())
+	}
+
+	userID, ok := c.Locals("user_id").(uint)
+	if !ok {
+		log.Printf("[LOCATION] Restore location failed - User not authenticated for Location ID: %d", idUint)
+		return helper.Fail(c, 401, "User not authenticated", "Failed to get user ID from token")
+	}
+
+	location, err := locationService.RestoreLocation(uint(idUint), userID)
+	if err != nil {
+		log.Printf("[LOCATION] Restore location failed - Location ID: %d, error: %v", idUint, err)
+		statusCode, message := handleLocationError(err)
+		return helper.Fail(c, statusCode, message, err.Error())
+	}
+
+	log.Printf("[LOCATION] Restore location successful - Location ID: %d, Restored by User ID: %d", idUint, userID)
+	return helper.Success(c, 200, "Location restored successfully", location)
+}

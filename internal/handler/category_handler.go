@@ -204,3 +204,43 @@ func DeleteCategory(c *fiber.Ctx) error {
 	log.Printf("[CATEGORY] Delete category successful - Category ID: %d, Deleted by User ID: %d", idUint, userID)
 	return helper.Success(c, 200, "Category deleted successfully", nil)
 }
+
+func GetDeletedCategories(c *fiber.Ctx) error {
+	log.Printf("[CATEGORY] Get deleted categories request from IP: %s", c.IP())
+
+	categories, err := categoryService.GetDeletedCategories()
+	if err != nil {
+		log.Printf("[CATEGORY] Get deleted categories failed - error: %v", err)
+		return helper.Fail(c, 500, "Failed to fetch deleted categories", err.Error())
+	}
+
+	log.Printf("[CATEGORY] Get deleted categories successful")
+	return helper.Success(c, 200, "Success", categories)
+}
+
+func RestoreCategory(c *fiber.Ctx) error {
+	id := c.Params("id")
+	log.Printf("[CATEGORY] Restore category request - ID: %s from IP: %s", id, c.IP())
+
+	idUint, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		log.Printf("[CATEGORY] Restore category failed - Invalid ID: %s, error: %v", id, err)
+		return helper.Fail(c, 400, "Invalid category ID", err.Error())
+	}
+
+	userID, ok := c.Locals("user_id").(uint)
+	if !ok {
+		log.Printf("[CATEGORY] Restore category failed - User not authenticated for Category ID: %d", idUint)
+		return helper.Fail(c, 401, "User not authenticated", "Failed to get user ID from token")
+	}
+
+	category, err := categoryService.RestoreCategory(uint(idUint), userID)
+	if err != nil {
+		log.Printf("[CATEGORY] Restore category failed - Category ID: %d, error: %v", idUint, err)
+		statusCode, message := handleCategoryError(err)
+		return helper.Fail(c, statusCode, message, err.Error())
+	}
+
+	log.Printf("[CATEGORY] Restore category successful - Category ID: %d, Restored by User ID: %d", idUint, userID)
+	return helper.Success(c, 200, "Category restored successfully", category)
+}

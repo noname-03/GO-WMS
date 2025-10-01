@@ -220,3 +220,43 @@ func DeleteProductBatch(c *fiber.Ctx) error {
 	log.Printf("[PRODUCT_BATCH] Delete product batch successful - Batch ID: %d, Deleted by User ID: %d", idUint, userID)
 	return helper.Success(c, 200, "Product batch deleted successfully", nil)
 }
+
+func GetDeletedProductBatches(c *fiber.Ctx) error {
+	log.Printf("[PRODUCT_BATCH] Get deleted product batches request from IP: %s", c.IP())
+
+	batches, err := productBatchService.GetDeletedProductBatches()
+	if err != nil {
+		log.Printf("[PRODUCT_BATCH] Get deleted product batches failed - error: %v", err)
+		return helper.Fail(c, 500, "Failed to fetch deleted product batches", err.Error())
+	}
+
+	log.Printf("[PRODUCT_BATCH] Get deleted product batches successful")
+	return helper.Success(c, 200, "Success", batches)
+}
+
+func RestoreProductBatch(c *fiber.Ctx) error {
+	id := c.Params("id")
+	log.Printf("[PRODUCT_BATCH] Restore product batch request - ID: %s from IP: %s", id, c.IP())
+
+	idUint, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		log.Printf("[PRODUCT_BATCH] Restore product batch failed - Invalid ID: %s, error: %v", id, err)
+		return helper.Fail(c, 400, "Invalid product batch ID", err.Error())
+	}
+
+	userID, ok := c.Locals("user_id").(uint)
+	if !ok {
+		log.Printf("[PRODUCT_BATCH] Restore product batch failed - User not authenticated for Batch ID: %d", idUint)
+		return helper.Fail(c, 401, "User not authenticated", "Failed to get user ID from token")
+	}
+
+	batch, err := productBatchService.RestoreProductBatch(uint(idUint), userID)
+	if err != nil {
+		log.Printf("[PRODUCT_BATCH] Restore product batch failed - Batch ID: %d, error: %v", idUint, err)
+		statusCode, message := handleProductBatchError(err)
+		return helper.Fail(c, statusCode, message, err.Error())
+	}
+
+	log.Printf("[PRODUCT_BATCH] Restore product batch successful - Batch ID: %d, Restored by User ID: %d", idUint, userID)
+	return helper.Success(c, 200, "Product batch restored successfully", batch)
+}

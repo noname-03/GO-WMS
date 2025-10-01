@@ -183,3 +183,29 @@ func (s *CategoryService) DeleteCategory(id uint, userID uint) error {
 
 	return s.categoryRepo.DeleteCategoryWithAudit(id, userID)
 }
+
+// GetDeletedCategories returns all soft deleted categories
+func (s *CategoryService) GetDeletedCategories() (interface{}, error) {
+	return s.categoryRepo.GetDeletedCategories()
+}
+
+// RestoreCategory restores a soft deleted category
+func (s *CategoryService) RestoreCategory(id uint, userID uint) (interface{}, error) {
+	if id == 0 {
+		return nil, errors.New("invalid category ID")
+	}
+	if userID == 0 {
+		return nil, errors.New("user ID is required for audit trail")
+	}
+
+	err := s.categoryRepo.RestoreCategory(id, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	restoredCategory, err := s.categoryRepo.GetCategoryByID(id)
+	if err != nil {
+		return nil, err
+	}
+	return restoredCategory, nil
+}

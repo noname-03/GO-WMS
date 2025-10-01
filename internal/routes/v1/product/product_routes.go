@@ -17,11 +17,13 @@ func RegisterProductRoutes(app fiber.Router) {
 	productRoutes.Use(middleware.JWTMiddleware())
 
 	// CRUD operations for products
-	productRoutes.Get("/", handler.GetProducts)         // GET /api/v1/products
-	productRoutes.Get("/:id", handler.GetProductByID)   // GET /api/v1/products/:id
-	productRoutes.Post("/", handler.CreateProduct)      // POST /api/v1/products
-	productRoutes.Put("/:id", handler.UpdateProduct)    // PUT /api/v1/products/:id
-	productRoutes.Delete("/:id", handler.DeleteProduct) // DELETE /api/v1/products/:id
+	productRoutes.Get("/", handler.GetProducts)               // GET /api/v1/products
+	productRoutes.Get("/deleted", handler.GetDeletedProducts) // GET /api/v1/products/deleted
+	productRoutes.Get("/:id", handler.GetProductByID)         // GET /api/v1/products/:id
+	productRoutes.Post("/", handler.CreateProduct)            // POST /api/v1/products
+	productRoutes.Put("/:id", handler.UpdateProduct)          // PUT /api/v1/products/:id
+	productRoutes.Put("/:id/restore", handler.RestoreProduct) // PUT /api/v1/products/:id/restore
+	productRoutes.Delete("/:id", handler.DeleteProduct)       // DELETE /api/v1/products/:id
 
 	// Product batch routes - nested under products
 	productRoutes.Get("/:productId/batches", handler.GetProductBatchesByProduct) // GET /api/v1/products/:productId/batches

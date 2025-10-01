@@ -174,3 +174,43 @@ func DeleteRole(c *fiber.Ctx) error {
 	log.Printf("[ROLE] Delete role successful - Role ID: %d, Deleted by User ID: %d", idUint, userID)
 	return helper.Success(c, 200, "Role deleted successfully", nil)
 }
+
+func GetDeletedRoles(c *fiber.Ctx) error {
+	log.Printf("[ROLE] Get deleted roles request from IP: %s", c.IP())
+
+	roles, err := roleService.GetDeletedRoles()
+	if err != nil {
+		log.Printf("[ROLE] Get deleted roles failed - error: %v", err)
+		return helper.Fail(c, 500, "Failed to fetch deleted roles", err.Error())
+	}
+
+	log.Printf("[ROLE] Get deleted roles successful - Found %d deleted roles", len(roles))
+	return helper.Success(c, 200, "Success", roles)
+}
+
+func RestoreRole(c *fiber.Ctx) error {
+	id := c.Params("id")
+	log.Printf("[ROLE] Restore role request - ID: %s from IP: %s", id, c.IP())
+
+	idUint, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		log.Printf("[ROLE] Restore role failed - Invalid ID: %s, error: %v", id, err)
+		return helper.Fail(c, 400, "Invalid role ID", err.Error())
+	}
+
+	userID, ok := c.Locals("user_id").(uint)
+	if !ok {
+		log.Printf("[ROLE] Restore role failed - User not authenticated for Role ID: %d", idUint)
+		return helper.Fail(c, 401, "User not authenticated", "Failed to get user ID from token")
+	}
+
+	role, err := roleService.RestoreRole(uint(idUint), userID)
+	if err != nil {
+		log.Printf("[ROLE] Restore role failed - Role ID: %d, error: %v", idUint, err)
+		statusCode, message := handleRoleError(err)
+		return helper.Fail(c, statusCode, message, err.Error())
+	}
+
+	log.Printf("[ROLE] Restore role successful - Role ID: %d, Restored by User ID: %d", idUint, userID)
+	return helper.Success(c, 200, "Role restored successfully", role)
+}

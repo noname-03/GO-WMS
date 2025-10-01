@@ -183,3 +183,29 @@ func (s *ProductService) DeleteProduct(id uint, userID uint) error {
 
 	return s.productRepo.DeleteProductWithAudit(id, userID)
 }
+
+// GetDeletedProducts returns all soft deleted products
+func (s *ProductService) GetDeletedProducts() (interface{}, error) {
+	return s.productRepo.GetDeletedProducts()
+}
+
+// RestoreProduct restores a soft deleted product
+func (s *ProductService) RestoreProduct(id uint, userID uint) (interface{}, error) {
+	if id == 0 {
+		return nil, errors.New("invalid product ID")
+	}
+	if userID == 0 {
+		return nil, errors.New("user ID is required for audit trail")
+	}
+
+	err := s.productRepo.RestoreProduct(id, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	restoredProduct, err := s.productRepo.GetProductByID(id)
+	if err != nil {
+		return nil, err
+	}
+	return restoredProduct, nil
+}

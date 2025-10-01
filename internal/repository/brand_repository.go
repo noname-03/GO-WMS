@@ -179,3 +179,28 @@ func (r *BrandRepository) CheckBrandExists(name string) (bool, error) {
 	result := query.Count(&count)
 	return count > 0, result.Error
 }
+
+// GetDeletedBrands returns all soft deleted brands
+func (r *BrandRepository) GetDeletedBrands() ([]model.Brand, error) {
+	var brands []model.Brand
+	result := database.DB.Unscoped().Where("deleted_at IS NOT NULL").Find(&brands)
+	return brands, result.Error
+}
+
+// RestoreBrand restores a soft deleted brand
+func (r *BrandRepository) RestoreBrand(id uint, userID uint) error {
+	// Update the user_updt field to track who restored the brand and set deleted_at to NULL
+	updateData := map[string]interface{}{
+		"user_updt":  userID,
+		"deleted_at": nil,
+	}
+
+	err := database.DB.Unscoped().Model(&model.Brand{}).Where("id = ?", id).Updates(updateData).Error
+	if err != nil {
+		return err
+	}
+
+	// Update cache after restore
+	r.updateBrandCache()
+	return nil
+}

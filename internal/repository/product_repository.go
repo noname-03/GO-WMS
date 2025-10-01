@@ -106,3 +106,51 @@ func (r *ProductRepository) CheckCategoryExists(categoryID uint) (bool, error) {
 	result := database.DB.Model(&model.Category{}).Where("id = ?", categoryID).Count(&count)
 	return count > 0, result.Error
 }
+
+// GetDeletedProducts returns all soft deleted products
+func (r *ProductRepository) GetDeletedProducts() ([]productWithBrandCategoryResponse, error) {
+	var products []productWithBrandCategoryResponse
+
+	result := database.DB.Table("products p").
+		Select("p.id, c.brand_id, p.category_id, b.name as brand_name, c.name as category_name, p.name, p.description").
+		Joins("LEFT JOIN categories c ON p.category_id = c.id").
+		Joins("LEFT JOIN brands b ON c.brand_id = b.id").
+		Where("p.deleted_at IS NOT NULL").
+		Order("p.deleted_at DESC").
+		Find(&products)
+
+	return products, result.Error
+}
+
+// RestoreProduct restores a soft deleted product
+func (r *ProductRepository) RestoreProduct(id uint, userID uint) error {
+	updateData := map[string]interface{}{
+		"user_updt":  userID,
+		"deleted_at": nil,
+	}
+	return database.DB.Unscoped().Model(&model.Product{}).Where("id = ?", id).Updates(updateData).Error
+}
+
+// // GetDeletedProducts returns all soft deleted products
+// func (r *ProductRepository) GetDeletedProducts() ([]productWithBrandCategoryResponse, error) {
+// 	var products []productWithBrandCategoryResponse
+
+// 	result := database.DB.Table("products p").
+// 		Select("p.id, c.brand_id, p.category_id, b.name as brand_name, c.name as category_name, p.name, p.description").
+// 		Joins("LEFT JOIN categories c ON p.category_id = c.id").
+// 		Joins("LEFT JOIN brands b ON c.brand_id = b.id").
+// 		Where("p.deleted_at IS NOT NULL").
+// 		Order("p.deleted_at DESC").
+// 		Find(&products)
+
+// 	return products, result.Error
+// }
+
+// // RestoreProduct restores a soft deleted product
+// func (r *ProductRepository) RestoreProduct(id uint, userID uint) error {
+// 	updateData := map[string]interface{}{
+// 		"user_updt":  userID,
+// 		"deleted_at": nil,
+// 	}
+// 	return database.DB.Unscoped().Model(&model.Product{}).Where("id = ?", id).Updates(updateData).Error
+// }

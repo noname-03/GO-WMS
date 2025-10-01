@@ -106,3 +106,28 @@ func (r *ProductBatchRepository) CheckProductExists(productID uint) (bool, error
 	result := database.DB.Model(&model.Product{}).Where("id = ?", productID).Count(&count)
 	return count > 0, result.Error
 }
+
+// GetDeletedProductBatches returns all soft deleted product batches
+func (r *ProductBatchRepository) GetDeletedProductBatches() ([]productBatchWithDetailsResponse, error) {
+	var batches []productBatchWithDetailsResponse
+
+	result := database.DB.Table("product_batches pb").
+		Select("pb.id, pb.product_id, p.name as product_name, c.id as category_id, c.name as category_name, b.id as brand_id, b.name as brand_name, pb.code_batch, pb.exp_date, pb.description").
+		Joins("LEFT JOIN products p ON pb.product_id = p.id").
+		Joins("LEFT JOIN categories c ON p.category_id = c.id").
+		Joins("LEFT JOIN brands b ON c.brand_id = b.id").
+		Where("pb.deleted_at IS NOT NULL").
+		Order("pb.deleted_at DESC").
+		Find(&batches)
+
+	return batches, result.Error
+}
+
+// RestoreProductBatch restores a soft deleted product batch
+func (r *ProductBatchRepository) RestoreProductBatch(id uint, userID uint) error {
+	updateData := map[string]interface{}{
+		"user_updt":  userID,
+		"deleted_at": nil,
+	}
+	return database.DB.Unscoped().Model(&model.ProductBatch{}).Where("id = ?", id).Updates(updateData).Error
+}

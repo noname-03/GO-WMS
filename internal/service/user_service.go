@@ -105,3 +105,29 @@ func (s *UserService) GetUsersWithRawSQL() ([]model.User, error) {
 func (s *UserService) GetUsersWithStats() ([]repository.UserResult, error) {
 	return s.userRepo.GetUsersWithStats()
 }
+
+// GetDeletedUsers returns all soft deleted users
+func (s *UserService) GetDeletedUsers() ([]model.User, error) {
+	return s.userRepo.GetDeletedUsers()
+}
+
+// RestoreUser restores a soft deleted user
+func (s *UserService) RestoreUser(id uint, userID uint) (*model.User, error) {
+	if id == 0 {
+		return nil, errors.New("invalid user ID")
+	}
+	if userID == 0 {
+		return nil, errors.New("user ID is required for audit trail")
+	}
+
+	err := s.userRepo.RestoreUser(id, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	restoredUser, err := s.userRepo.GetUserByID(id)
+	if err != nil {
+		return nil, err
+	}
+	return restoredUser, nil
+}

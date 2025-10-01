@@ -204,3 +204,29 @@ func (s *ProductBatchService) DeleteProductBatch(id uint, userID uint) error {
 
 	return s.batchRepo.DeleteProductBatchWithAudit(id, userID)
 }
+
+// GetDeletedProductBatches returns all soft deleted product batches
+func (s *ProductBatchService) GetDeletedProductBatches() (interface{}, error) {
+	return s.batchRepo.GetDeletedProductBatches()
+}
+
+// RestoreProductBatch restores a soft deleted product batch
+func (s *ProductBatchService) RestoreProductBatch(id uint, userID uint) (interface{}, error) {
+	if id == 0 {
+		return nil, errors.New("invalid product batch ID")
+	}
+	if userID == 0 {
+		return nil, errors.New("user ID is required for audit trail")
+	}
+
+	err := s.batchRepo.RestoreProductBatch(id, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	restoredBatch, err := s.batchRepo.GetProductBatchByID(id)
+	if err != nil {
+		return nil, err
+	}
+	return restoredBatch, nil
+}

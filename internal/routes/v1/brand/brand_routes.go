@@ -15,11 +15,13 @@ func SetupBrandRoutes(router fiber.Router) {
 
 	// IMPORTANT: Specific routes MUST come BEFORE parameterized routes
 	// Specific routes (no parameters)
-	brands.Get("/", handler.GetBrands) // GET /api/v1/brands
+	brands.Get("/", handler.GetBrands)               // GET /api/v1/brands
+	brands.Get("/deleted", handler.GetDeletedBrands) // GET /api/v1/brands/deleted
 
 	// Parameterized routes (MUST be at the end)
-	brands.Get("/:id", handler.GetBrandByID)   // GET /api/v1/brands/:id
-	brands.Post("/", handler.CreateBrand)      // POST /api/v1/brands
-	brands.Put("/:id", handler.UpdateBrand)    // PUT /api/v1/brands/:id
-	brands.Delete("/:id", handler.DeleteBrand) // DELETE /api/v1/brands/:id
+	brands.Get("/:id", handler.GetBrandByID)         // GET /api/v1/brands/:id
+	brands.Post("/", handler.CreateBrand)            // POST /api/v1/brands
+	brands.Put("/:id", handler.UpdateBrand)          // PUT /api/v1/brands/:id
+	brands.Delete("/:id", handler.DeleteBrand)       // DELETE /api/v1/brands/:id
+	brands.Put("/:id/restore", handler.RestoreBrand) // PUT /api/v1/brands/:id/restore
 }

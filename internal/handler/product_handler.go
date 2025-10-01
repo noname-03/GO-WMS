@@ -205,3 +205,43 @@ func DeleteProduct(c *fiber.Ctx) error {
 	log.Printf("[PRODUCT] Delete product successful")
 	return helper.Success(c, 200, "Product deleted successfully", nil)
 }
+
+func GetDeletedProducts(c *fiber.Ctx) error {
+	log.Printf("[PRODUCT] Get deleted products request from IP: %s", c.IP())
+
+	products, err := productService.GetDeletedProducts()
+	if err != nil {
+		log.Printf("[PRODUCT] Get deleted products failed - error: %v", err)
+		return helper.Fail(c, 500, "Failed to fetch deleted products", err.Error())
+	}
+
+	log.Printf("[PRODUCT] Get deleted products successful")
+	return helper.Success(c, 200, "Success", products)
+}
+
+func RestoreProduct(c *fiber.Ctx) error {
+	id := c.Params("id")
+	log.Printf("[PRODUCT] Restore product request - ID: %s from IP: %s", id, c.IP())
+
+	idUint, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		log.Printf("[PRODUCT] Restore product failed - Invalid ID: %s, error: %v", id, err)
+		return helper.Fail(c, 400, "Invalid product ID", err.Error())
+	}
+
+	userID, ok := c.Locals("user_id").(uint)
+	if !ok {
+		log.Printf("[PRODUCT] Restore product failed - User not authenticated for Product ID: %d", idUint)
+		return helper.Fail(c, 401, "User not authenticated", "Failed to get user ID from token")
+	}
+
+	product, err := productService.RestoreProduct(uint(idUint), userID)
+	if err != nil {
+		log.Printf("[PRODUCT] Restore product failed - Product ID: %d, error: %v", idUint, err)
+		statusCode, message := handleProductError(err)
+		return helper.Fail(c, statusCode, message, err.Error())
+	}
+
+	log.Printf("[PRODUCT] Restore product successful - Product ID: %d, Restored by User ID: %d", idUint, userID)
+	return helper.Success(c, 200, "Product restored successfully", product)
+}

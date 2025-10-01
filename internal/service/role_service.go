@@ -125,3 +125,29 @@ func (s *RoleService) DeleteRole(id uint, userID uint) error {
 
 	return s.roleRepo.DeleteRoleWithAudit(id, userID)
 }
+
+// GetDeletedRoles returns all soft deleted roles
+func (s *RoleService) GetDeletedRoles() ([]model.Role, error) {
+	return s.roleRepo.GetDeletedRoles()
+}
+
+// RestoreRole restores a soft deleted role
+func (s *RoleService) RestoreRole(id uint, userID uint) (*model.Role, error) {
+	if id == 0 {
+		return nil, errors.New("invalid role ID")
+	}
+	if userID == 0 {
+		return nil, errors.New("user ID is required for audit trail")
+	}
+
+	err := s.roleRepo.RestoreRole(id, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	restoredRole, err := s.roleRepo.GetRoleByID(id)
+	if err != nil {
+		return nil, err
+	}
+	return &restoredRole, nil
+}

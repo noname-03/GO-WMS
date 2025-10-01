@@ -248,3 +248,29 @@ func (s *LocationService) DeleteLocation(id uint, userID uint) error {
 
 	return s.locationRepo.DeleteLocationWithAudit(id, userID)
 }
+
+// GetDeletedLocations returns all soft deleted locations
+func (s *LocationService) GetDeletedLocations() (interface{}, error) {
+	return s.locationRepo.GetDeletedLocations()
+}
+
+// RestoreLocation restores a soft deleted location
+func (s *LocationService) RestoreLocation(id uint, userID uint) (interface{}, error) {
+	if id == 0 {
+		return nil, errors.New("invalid location ID")
+	}
+	if userID == 0 {
+		return nil, errors.New("user ID is required for audit trail")
+	}
+
+	err := s.locationRepo.RestoreLocation(id, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	restoredLocation, err := s.locationRepo.GetLocationByID(id)
+	if err != nil {
+		return nil, err
+	}
+	return restoredLocation, nil
+}

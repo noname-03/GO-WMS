@@ -16,6 +16,9 @@ func LocationRoutes(router fiber.Router) {
 	// GET /api/v1/locations - Get all locations
 	location.Get("/", handler.GetLocations)
 
+	// GET /api/v1/locations/deleted - Get deleted locations
+	location.Get("/deleted", handler.GetDeletedLocations)
+
 	// GET /api/v1/locations/user/:userId - Get locations by user ID
 	location.Get("/user/:userId", handler.GetLocationsByUser)
 
@@ -30,6 +33,9 @@ func LocationRoutes(router fiber.Router) {
 
 	// PUT /api/v1/locations/:id - Update location by ID
 	location.Put("/:id", handler.UpdateLocation)
+
+	// PUT /api/v1/locations/:id/restore - Restore deleted location
+	location.Put("/:id/restore", handler.RestoreLocation)
 
 	// DELETE /api/v1/locations/:id - Delete location by ID
 	location.Delete("/:id", handler.DeleteLocation)

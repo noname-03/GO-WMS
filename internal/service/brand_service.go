@@ -123,3 +123,49 @@ func (s *BrandService) DeleteBrand(id uint, userID uint) error {
 
 	return s.brandRepo.DeleteBrandWithAudit(id, userID)
 }
+
+// GetDeletedBrands returns all soft deleted brands
+func (s *BrandService) GetDeletedBrands() ([]model.Brand, error) {
+	return s.brandRepo.GetDeletedBrands()
+}
+
+// RestoreBrand restores a soft deleted brand
+func (s *BrandService) RestoreBrand(id uint, userID uint) (*model.Brand, error) {
+	if id == 0 {
+		return nil, errors.New("invalid brand ID")
+	}
+
+	if userID == 0 {
+		return nil, errors.New("user ID is required for audit trail")
+	}
+
+	// Check if brand exists in deleted records
+	deletedBrands, err := s.brandRepo.GetDeletedBrands()
+	if err != nil {
+		return nil, err
+	}
+
+	var foundBrand *model.Brand
+	for _, brand := range deletedBrands {
+		if brand.ID == id {
+			foundBrand = &brand
+			break
+		}
+	}
+
+	if foundBrand == nil {
+		return nil, errors.New("deleted brand not found")
+	}
+
+	err = s.brandRepo.RestoreBrand(id, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get restored brand
+	restoredBrand, err := s.brandRepo.GetBrandByID(id)
+	if err != nil {
+		return nil, err
+	}
+	return &restoredBrand, nil
+}

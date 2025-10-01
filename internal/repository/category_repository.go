@@ -102,3 +102,28 @@ func (r *CategoryRepository) CheckBrandExists(brandID uint) (bool, error) {
 	result := database.DB.Model(&model.Brand{}).Where("id = ?", brandID).Count(&count)
 	return count > 0, result.Error
 }
+
+// GetDeletedCategories returns all soft deleted categories
+func (r *CategoryRepository) GetDeletedCategories() ([]categoryWithBrandResponse, error) {
+	var categories []categoryWithBrandResponse
+
+	result := database.DB.Unscoped().Table("categories c").
+		Select("c.id, c.brand_id, c.name, c.description, b.name as brand_name").
+		Joins("LEFT JOIN brands b ON c.brand_id = b.id").
+		Where("c.deleted_at IS NOT NULL").
+		Order("c.deleted_at DESC").
+		Find(&categories)
+
+	return categories, result.Error
+}
+
+// RestoreCategory restores a soft deleted category
+func (r *CategoryRepository) RestoreCategory(id uint, userID uint) error {
+	// Update the user_updt field to track who restored the category and set deleted_at to NULL
+	updateData := map[string]interface{}{
+		"user_updt":  userID,
+		"deleted_at": nil,
+	}
+
+	return database.DB.Unscoped().Model(&model.Category{}).Where("id = ?", id).Updates(updateData).Error
+}

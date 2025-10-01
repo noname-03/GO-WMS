@@ -60,3 +60,19 @@ func (r *RoleRepository) CheckRoleExists(name string) (bool, error) {
 	result := query.Count(&count)
 	return count > 0, result.Error
 }
+
+// GetDeletedRoles returns all soft deleted roles
+func (r *RoleRepository) GetDeletedRoles() ([]model.Role, error) {
+	var roles []model.Role
+	result := database.DB.Unscoped().Where("deleted_at IS NOT NULL").Order("deleted_at DESC").Find(&roles)
+	return roles, result.Error
+}
+
+// RestoreRole restores a soft deleted role
+func (r *RoleRepository) RestoreRole(id uint, userID uint) error {
+	updateData := map[string]interface{}{
+		"user_updt":  userID,
+		"deleted_at": nil,
+	}
+	return database.DB.Unscoped().Model(&model.Role{}).Where("id = ?", id).Updates(updateData).Error
+}

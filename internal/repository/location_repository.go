@@ -122,3 +122,26 @@ func (r *LocationRepository) CheckLocationNameExists(userID uint, name string, e
 	result := query.Count(&count)
 	return count > 0, result.Error
 }
+
+// GetDeletedLocations returns all soft deleted locations
+func (r *LocationRepository) GetDeletedLocations() ([]locationWithUserResponse, error) {
+	var locations []locationWithUserResponse
+
+	result := database.DB.Table("locations l").
+		Select("l.id, l.user_id, u.name as user_name, l.name, l.address, l.phone_number, l.type").
+		Joins("INNER JOIN users u ON l.user_id = u.id").
+		Where("l.deleted_at IS NOT NULL").
+		Order("l.deleted_at DESC").
+		Find(&locations)
+
+	return locations, result.Error
+}
+
+// RestoreLocation restores a soft deleted location
+func (r *LocationRepository) RestoreLocation(id uint, userID uint) error {
+	updateData := map[string]interface{}{
+		"user_updt":  userID,
+		"deleted_at": nil,
+	}
+	return database.DB.Unscoped().Model(&model.Location{}).Where("id = ?", id).Updates(updateData).Error
+}

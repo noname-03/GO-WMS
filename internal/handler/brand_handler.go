@@ -174,3 +174,44 @@ func DeleteBrand(c *fiber.Ctx) error {
 	log.Printf("[BRAND] Delete brand successful - Brand ID: %d, Deleted by User ID: %d", idUint, userID)
 	return helper.Success(c, 200, "Brand deleted successfully", nil)
 }
+
+func GetDeletedBrands(c *fiber.Ctx) error {
+	log.Printf("[BRAND] Get deleted brands request from IP: %s", c.IP())
+
+	brands, err := brandService.GetDeletedBrands()
+	if err != nil {
+		log.Printf("[BRAND] Get deleted brands failed - error: %v", err)
+		return helper.Fail(c, 500, "Failed to fetch deleted brands", err.Error())
+	}
+
+	log.Printf("[BRAND] Get deleted brands successful - Found %d deleted brands", len(brands))
+	return helper.Success(c, 200, "Success", brands)
+}
+
+func RestoreBrand(c *fiber.Ctx) error {
+	id := c.Params("id")
+	log.Printf("[BRAND] Restore brand request - ID: %s from IP: %s", id, c.IP())
+
+	idUint, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		log.Printf("[BRAND] Restore brand failed - Invalid ID: %s, error: %v", id, err)
+		return helper.Fail(c, 400, "Invalid brand ID", err.Error())
+	}
+
+	// Get user ID from JWT token
+	userID, ok := c.Locals("user_id").(uint)
+	if !ok {
+		log.Printf("[BRAND] Restore brand failed - User not authenticated for Brand ID: %d", idUint)
+		return helper.Fail(c, 401, "User not authenticated", "Failed to get user ID from token")
+	}
+
+	brand, err := brandService.RestoreBrand(uint(idUint), userID)
+	if err != nil {
+		log.Printf("[BRAND] Restore brand failed - Brand ID: %d, error: %v", idUint, err)
+		statusCode, message := handleBrandError(err)
+		return helper.Fail(c, statusCode, message, err.Error())
+	}
+
+	log.Printf("[BRAND] Restore brand successful - Brand ID: %d, Name: %s, Restored by User ID: %d", brand.ID, brand.Name, userID)
+	return helper.Success(c, 200, "Brand restored successfully", brand)
+}

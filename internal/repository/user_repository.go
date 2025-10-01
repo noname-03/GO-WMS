@@ -146,3 +146,41 @@ type UserStats struct {
 	ActiveUsers  int `json:"active_users"`
 	DeletedUsers int `json:"deleted_users"`
 }
+
+// UpdateUser updates user data
+func (r *UserRepository) UpdateUser(id uint, updateData map[string]interface{}) error {
+	return database.DB.Model(&model.User{}).Where("id = ?", id).Updates(updateData).Error
+}
+
+// DeleteUserWithAudit performs soft delete with audit trail
+func (r *UserRepository) DeleteUserWithAudit(id uint, userID uint) error {
+	// First update the user_updt field to track who deleted the user
+	updateData := map[string]interface{}{
+		"user_updt": userID,
+	}
+
+	// Update the audit field first
+	err := database.DB.Model(&model.User{}).Where("id = ?", id).Updates(updateData).Error
+	if err != nil {
+		return err
+	}
+
+	// Then perform the soft delete
+	return database.DB.Delete(&model.User{}, id).Error
+}
+
+// GetDeletedUsers returns all soft deleted users
+func (r *UserRepository) GetDeletedUsers() ([]model.User, error) {
+	var users []model.User
+	result := database.DB.Unscoped().Where("deleted_at IS NOT NULL").Order("deleted_at DESC").Find(&users)
+	return users, result.Error
+}
+
+// RestoreUser restores a soft deleted user
+func (r *UserRepository) RestoreUser(id uint, userID uint) error {
+	updateData := map[string]interface{}{
+		"user_updt":  userID,
+		"deleted_at": nil,
+	}
+	return database.DB.Unscoped().Model(&model.User{}).Where("id = ?", id).Updates(updateData).Error
+}
