@@ -71,14 +71,30 @@ func (s *ProductItemTrackService) GetProductItemTracksByProduct(productID uint) 
 	return s.trackRepo.GetProductItemTracksByProduct(productID)
 }
 
+func (s *ProductItemTrackService) GetProductItemTracksByDateRange(startDate, endDate time.Time) (interface{}, error) {
+	if startDate.IsZero() || endDate.IsZero() {
+		return nil, errors.New("start date and end date are required")
+	}
+
+	if startDate.After(endDate) {
+		return nil, errors.New("start date cannot be after end date")
+	}
+
+	return s.trackRepo.GetProductItemTracksByDateRange(startDate, endDate)
+}
+
 func (s *ProductItemTrackService) GetProductItemTrackByID(id uint) (interface{}, error) {
 	return s.trackRepo.GetProductItemTrackByID(id)
 }
 
-func (s *ProductItemTrackService) CreateProductItemTrack(productItemID uint, productStockID, productID, productBatchID *uint, unitPrice *string, stockIn, stockOut, quantity *float64, operation *string, stock *float64, action string, userID uint) (interface{}, error) {
+func (s *ProductItemTrackService) CreateProductItemTrack(productItemID uint, productStockID, productID, productBatchID *uint, date time.Time, unitPrice *string, stockIn, stockOut, quantity *float64, operation *string, stock *float64, description *string, action string, userID uint) (interface{}, error) {
 	// Validate required fields
 	if productItemID == 0 {
 		return nil, errors.New("product item ID is required")
+	}
+
+	if date.IsZero() {
+		return nil, errors.New("date is required")
 	}
 
 	// Check if product item exists and get details
@@ -133,10 +149,12 @@ func (s *ProductItemTrackService) CreateProductItemTrack(productItemID uint, pro
 		ProductStockID: defaultProductStockID,
 		ProductBatchID: defaultProductBatchID,
 		ProductID:      defaultProductID,
+		Date:           date,
 		Quantity:       defaultQuantity,
 		Operation:      defaultOperation,
 		Stock:          currentStock,
 		UnitPrice:      unitPrice,
+		Description:    description,
 		UserIns:        &userID,
 		UserUpdt:       &userID,
 	}
@@ -150,7 +168,7 @@ func (s *ProductItemTrackService) CreateProductItemTrack(productItemID uint, pro
 	return s.trackRepo.GetProductItemTrackByID(track.ID)
 }
 
-func (s *ProductItemTrackService) UpdateProductItemTrack(id uint, unitPrice *string, quantity *float64, operation *string, stock *float64, userID uint) (interface{}, error) {
+func (s *ProductItemTrackService) UpdateProductItemTrack(id uint, date *time.Time, unitPrice *string, quantity *float64, operation *string, stock *float64, description *string, userID uint) (interface{}, error) {
 	// Check if track exists
 	_, err := s.trackRepo.GetProductItemTrackModelByID(id)
 	if err != nil {
@@ -164,6 +182,9 @@ func (s *ProductItemTrackService) UpdateProductItemTrack(id uint, unitPrice *str
 	}
 
 	// Update provided fields
+	if date != nil && !date.IsZero() {
+		updateData["date"] = *date
+	}
 	if unitPrice != nil {
 		updateData["unit_price"] = *unitPrice
 	}
@@ -184,6 +205,9 @@ func (s *ProductItemTrackService) UpdateProductItemTrack(id uint, unitPrice *str
 			return nil, errors.New("stock cannot be negative")
 		}
 		updateData["stock"] = *stock
+	}
+	if description != nil {
+		updateData["description"] = *description
 	}
 
 	err = s.trackRepo.UpdateProductItemTrack(id, updateData)

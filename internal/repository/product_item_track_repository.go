@@ -17,7 +17,7 @@ type productItemTrackResponse struct {
 	ProductName      string    `json:"productName"`
 	ProductBatchID   uint      `json:"productBatchId"`
 	ProductBatchCode string    `json:"productBatchCode"`
-	DateTrack        time.Time `json:"dateTrack"`
+	Date             time.Time `json:"date"`
 	UnitPrice        *float64  `json:"unitPrice"`
 	Quantity         *float64  `json:"quantity"`
 	Operation        string    `json:"operation"`
@@ -32,7 +32,7 @@ func (r *ProductItemTrackRepository) GetAllProductItemTracks() ([]productItemTra
 	var tracks []productItemTrackResponse
 
 	result := database.DB.Table("product_item_tracks pit").
-		Select("pit.id, pit.product_item_id, pit.product_stock_id, pit.product_id, p.name as product_name, pit.product_batch_id, pb.code_batch as product_batch_code, pit.date_track, pit.unit_price, pit.quantity, pit.operation, pit.stock").
+		Select("pit.id, pit.product_item_id, pit.product_stock_id, pit.product_id, p.name as product_name, pit.product_batch_id, pb.code_batch as product_batch_code, pit.date_track as date, pit.unit_price, pit.quantity, pit.operation, pit.stock").
 		Joins("INNER JOIN products p ON pit.product_id = p.id AND p.deleted_at IS NULL").
 		Joins("INNER JOIN product_batches pb ON pit.product_batch_id = pb.id AND pb.deleted_at IS NULL").
 		Where("pit.deleted_at IS NULL").
@@ -46,7 +46,7 @@ func (r *ProductItemTrackRepository) GetProductItemTracksByItem(itemID uint) ([]
 	var tracks []productItemTrackResponse
 
 	result := database.DB.Table("product_item_tracks pit").
-		Select("pit.id, pit.product_item_id, pit.product_stock_id, pit.product_id, p.name as product_name, pit.product_batch_id, pb.code_batch as product_batch_code, pit.date_track, pit.unit_price, pit.quantity, pit.operation, pit.stock").
+		Select("pit.id, pit.product_item_id, pit.product_stock_id, pit.product_id, p.name as product_name, pit.product_batch_id, pb.code_batch as product_batch_code, pit.date_track as date, pit.unit_price, pit.quantity, pit.operation, pit.stock").
 		Joins("INNER JOIN products p ON pit.product_id = p.id AND p.deleted_at IS NULL").
 		Joins("INNER JOIN product_batches pb ON pit.product_batch_id = pb.id AND pb.deleted_at IS NULL").
 		Where("pit.deleted_at IS NULL AND pit.product_item_id = ?", itemID).
@@ -60,7 +60,7 @@ func (r *ProductItemTrackRepository) GetProductItemTracksByStock(stockID uint) (
 	var tracks []productItemTrackResponse
 
 	result := database.DB.Table("product_item_tracks pit").
-		Select("pit.id, pit.product_item_id, pit.product_stock_id, pit.product_id, p.name as product_name, pit.product_batch_id, pb.code_batch as product_batch_code, pit.date_track, pit.unit_price, pit.quantity, pit.operation, pit.stock").
+		Select("pit.id, pit.product_item_id, pit.product_stock_id, pit.product_id, p.name as product_name, pit.product_batch_id, pb.code_batch as product_batch_code, pit.date_track as date, pit.unit_price, pit.quantity, pit.operation, pit.stock").
 		Joins("INNER JOIN products p ON pit.product_id = p.id AND p.deleted_at IS NULL").
 		Joins("INNER JOIN product_batches pb ON pit.product_batch_id = pb.id AND pb.deleted_at IS NULL").
 		Where("pit.deleted_at IS NULL AND pit.product_stock_id = ?", stockID).
@@ -74,7 +74,7 @@ func (r *ProductItemTrackRepository) GetProductItemTracksByProduct(productID uin
 	var tracks []productItemTrackResponse
 
 	result := database.DB.Table("product_item_tracks pit").
-		Select("pit.id, pit.product_item_id, pit.product_stock_id, pit.product_id, p.name as product_name, pit.product_batch_id, pb.code_batch as product_batch_code, pit.date_track, pit.unit_price, pit.quantity, pit.operation, pit.stock").
+		Select("pit.id, pit.product_item_id, pit.product_stock_id, pit.product_id, p.name as product_name, pit.product_batch_id, pb.code_batch as product_batch_code, pit.date_track as date, pit.unit_price, pit.quantity, pit.operation, pit.stock").
 		Joins("INNER JOIN products p ON pit.product_id = p.id AND p.deleted_at IS NULL").
 		Joins("INNER JOIN product_batches pb ON pit.product_batch_id = pb.id AND pb.deleted_at IS NULL").
 		Where("pit.deleted_at IS NULL AND pit.product_id = ?", productID).
@@ -88,7 +88,7 @@ func (r *ProductItemTrackRepository) GetProductItemTracksByDateRange(startDate, 
 	var tracks []productItemTrackResponse
 
 	result := database.DB.Table("product_item_tracks pit").
-		Select("pit.id, pit.product_item_id, pit.product_stock_id, pit.product_id, p.name as product_name, pit.product_batch_id, pb.code_batch as product_batch_code, pit.date_track, pit.unit_price, pit.quantity, pit.operation, pit.stock").
+		Select("pit.id, pit.product_item_id, pit.product_stock_id, pit.product_id, p.name as product_name, pit.product_batch_id, pb.code_batch as product_batch_code, pit.date_track as date, pit.unit_price, pit.quantity, pit.operation, pit.stock").
 		Joins("INNER JOIN products p ON pit.product_id = p.id AND p.deleted_at IS NULL").
 		Joins("INNER JOIN product_batches pb ON pit.product_batch_id = pb.id AND pb.deleted_at IS NULL").
 		Where("pit.deleted_at IS NULL AND pit.date_track BETWEEN ? AND ?", startDate, endDate).
@@ -102,7 +102,7 @@ func (r *ProductItemTrackRepository) GetProductItemTrackByID(id uint) (productIt
 	var track productItemTrackResponse
 
 	result := database.DB.Table("product_item_tracks pit").
-		Select("pit.id, pit.product_item_id, pit.product_stock_id, pit.product_id, p.name as product_name, pit.product_batch_id, pb.code_batch as product_batch_code, pit.date_track, pit.unit_price, pit.quantity, pit.operation, pit.stock").
+		Select("pit.id, pit.product_item_id, pit.product_stock_id, pit.product_id, p.name as product_name, pit.product_batch_id, pb.code_batch as product_batch_code, pit.date_track as date, pit.unit_price, pit.quantity, pit.operation, pit.stock").
 		Joins("INNER JOIN products p ON pit.product_id = p.id AND p.deleted_at IS NULL").
 		Joins("INNER JOIN product_batches pb ON pit.product_batch_id = pb.id AND pb.deleted_at IS NULL").
 		Where("pit.deleted_at IS NULL AND pit.id = ?", id).
@@ -149,13 +149,12 @@ func (r *ProductItemTrackRepository) CheckProductItemExists(itemID uint) (bool, 
 	return count > 0, result.Error
 }
 
-
 // GetTracksByOperation returns tracks filtered by operation type (Plus/Minus/In/Out)
 func (r *ProductItemTrackRepository) GetTracksByOperation(operation string) ([]productItemTrackResponse, error) {
 	var tracks []productItemTrackResponse
 
 	result := database.DB.Table("product_item_tracks pit").
-		Select("pit.id, pit.product_item_id, pit.product_stock_id, pit.product_id, p.name as product_name, pit.product_batch_id, pb.code_batch as product_batch_code, pit.date_track, pit.unit_price, pit.quantity, pit.operation, pit.stock").
+		Select("pit.id, pit.product_item_id, pit.product_stock_id, pit.product_id, p.name as product_name, pit.product_batch_id, pb.code_batch as product_batch_code, pit.date_track as date, pit.unit_price, pit.quantity, pit.operation, pit.stock").
 		Joins("INNER JOIN products p ON pit.product_id = p.id AND p.deleted_at IS NULL").
 		Joins("INNER JOIN product_batches pb ON pit.product_batch_id = pb.id AND pb.deleted_at IS NULL").
 		Where("pit.deleted_at IS NULL AND pit.operation = ?", operation).

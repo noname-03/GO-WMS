@@ -3,6 +3,7 @@ package seeder
 import (
 	"log"
 	"myapp/internal/model"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -55,6 +56,8 @@ func (s *ProductItemTrackSeeder) Seed(db *gorm.DB) error {
 
 	// Create meaningful tracks for each item
 	trackIndex := 0
+	now := time.Now()
+
 	for _, item := range items {
 		// Start with current item quantity
 		currentStock := 0.0
@@ -66,6 +69,10 @@ func (s *ProductItemTrackSeeder) Seed(db *gorm.DB) error {
 		numTracks := 3 + (trackIndex % 2) // 3-4 tracks per item
 
 		for j := 0; j < numTracks; j++ {
+			// Create progressive dates (spread over last 30 days)
+			daysAgo := 30 - (j * 7) // 30, 23, 16, 9 days ago
+			trackDate := now.AddDate(0, 0, -daysAgo)
+
 			// Create progressive quantities that build to current stock
 			var quantity, newStock float64
 			var operation string
@@ -104,6 +111,7 @@ func (s *ProductItemTrackSeeder) Seed(db *gorm.DB) error {
 				ProductStockID: item.ProductStockID,
 				ProductID:      item.ProductID,
 				ProductBatchID: item.ProductBatchID,
+				Date:           trackDate,
 				Quantity:       quantity,
 				Operation:      operation,
 				Stock:          newStock,
@@ -121,8 +129,8 @@ func (s *ProductItemTrackSeeder) Seed(db *gorm.DB) error {
 	// Create tracks individually to handle duplicates properly
 	for _, track := range tracks {
 		var existing model.ProductItemTrack
-		result := db.Where("product_stock_id = ? AND quantity = ? AND operation = ? AND description = ?",
-			track.ProductStockID, track.Quantity, track.Operation, track.Description).First(&existing)
+		result := db.Where("product_stock_id = ? AND date = ? AND quantity = ? AND operation = ?",
+			track.ProductStockID, track.Date, track.Quantity, track.Operation).First(&existing)
 
 		if result.Error != nil {
 			// Track doesn't exist, create it
@@ -130,11 +138,11 @@ func (s *ProductItemTrackSeeder) Seed(db *gorm.DB) error {
 				log.Printf("❌ Failed to create product item track for stock ID %d: %v", track.ProductStockID, err)
 				return err
 			}
-			log.Printf("✅ Product item track created for stock ID %d - Operation: %s, Qty: %.2f, Stock: %.2f",
-				track.ProductStockID, track.Operation, track.Quantity, track.Stock)
+			log.Printf("✅ Product item track created for stock ID %d - Date: %s, Operation: %s, Qty: %.2f, Stock: %.2f",
+				track.ProductStockID, track.Date.Format("2006-01-02"), track.Operation, track.Quantity, track.Stock)
 		} else {
-			log.Printf("✅ ProductItemTrackSeeder: Track for stock ID %d with operation %s already exists, skipping...",
-				track.ProductStockID, track.Operation)
+			log.Printf("✅ ProductItemTrackSeeder: Track for stock ID %d on %s already exists, skipping...",
+				track.ProductStockID, track.Date.Format("2006-01-02"))
 		}
 	}
 

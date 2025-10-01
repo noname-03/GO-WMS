@@ -18,20 +18,24 @@ type CreateProductItemTrackRequest struct {
 	ProductStockID *uint    `json:"product_stock_id,omitempty"`
 	ProductID      *uint    `json:"product_id,omitempty"`
 	ProductBatchID *uint    `json:"product_batch_id,omitempty"`
+	Date           string   `json:"date" validate:"required"` // Format: YYYY-MM-DD
 	UnitPrice      *string  `json:"unit_price"`
 	StockIn        *float64 `json:"stock_in" validate:"omitempty,gte=0"`
 	StockOut       *float64 `json:"stock_out" validate:"omitempty,gte=0"`
 	Quantity       *float64 `json:"quantity" validate:"omitempty,gt=0"`
 	Operation      *string  `json:"operation" validate:"omitempty,oneof=In Out Plus Minus"`
 	Stock          *float64 `json:"stock" validate:"omitempty,gte=0"`
+	Description    *string  `json:"description,omitempty"`
 	Action         string   `json:"action,omitempty"` // CREATE, UPDATE, DELETE, STOCK_IN, STOCK_OUT
 }
 
 type UpdateProductItemTrackRequest struct {
-	UnitPrice *string  `json:"unit_price,omitempty"`
-	Quantity  *float64 `json:"quantity,omitempty" validate:"omitempty,gt=0"`
-	Operation *string  `json:"operation,omitempty" validate:"omitempty,oneof=In Out Plus Minus"`
-	Stock     *float64 `json:"stock,omitempty" validate:"omitempty,gte=0"`
+	Date        *string  `json:"date,omitempty"` // Format: YYYY-MM-DD
+	UnitPrice   *string  `json:"unit_price,omitempty"`
+	Quantity    *float64 `json:"quantity,omitempty" validate:"omitempty,gt=0"`
+	Operation   *string  `json:"operation,omitempty" validate:"omitempty,oneof=In Out Plus Minus"`
+	Stock       *float64 `json:"stock,omitempty" validate:"omitempty,gte=0"`
+	Description *string  `json:"description,omitempty"`
 }
 
 type DateRangeRequest struct {
@@ -122,20 +126,22 @@ func GetProductItemTracksByDateRange(c *fiber.Ctx) error {
 		return helper.Fail(c, 400, "Invalid parameters", "startDate and endDate query parameters are required")
 	}
 
-	_, err := time.Parse("2006-01-02", startDateStr)
+	startDate, err := time.Parse("2006-01-02", startDateStr)
 	if err != nil {
 		log.Printf("[PRODUCT_ITEM_TRACK] Get tracks by date range failed - Invalid start date: %s, error: %v", startDateStr, err)
 		return helper.Fail(c, 400, "Invalid date format", "Invalid startDate format. Use YYYY-MM-DD")
 	}
 
-	_, err = time.Parse("2006-01-02", endDateStr)
+	endDate, err := time.Parse("2006-01-02", endDateStr)
 	if err != nil {
 		log.Printf("[PRODUCT_ITEM_TRACK] Get tracks by date range failed - Invalid end date: %s, error: %v", endDateStr, err)
 		return helper.Fail(c, 400, "Invalid date format", "Invalid endDate format. Use YYYY-MM-DD")
 	}
 
-	// For now, return all tracks (date range filtering can be implemented later)
-	result, err := productItemTrackService.GetAllProductItemTracks()
+	// Add end of day to end date
+	endDate = endDate.Add(23*time.Hour + 59*time.Minute + 59*time.Second)
+
+	result, err := productItemTrackService.GetProductItemTracksByDateRange(startDate, endDate)
 	if err != nil {
 		log.Printf("[PRODUCT_ITEM_TRACK] Get tracks by date range failed, error: %v", err)
 		return helper.Fail(c, 400, "Failed to retrieve product item tracks", err.Error())
@@ -203,6 +209,13 @@ func CreateProductItemTrack(c *fiber.Ctx) error {
 		return helper.Fail(c, 400, "Invalid request body", err.Error())
 	}
 
+	// Parse date
+	parsedDate, err := time.Parse("2006-01-02", req.Date)
+	if err != nil {
+		log.Printf("[PRODUCT_ITEM_TRACK] Create failed - Invalid date format: %s, error: %v", req.Date, err)
+		return helper.Fail(c, 400, "Invalid date format", "Date must be in YYYY-MM-DD format")
+	}
+
 	// Get user ID from JWT token
 	userID, ok := c.Locals("user_id").(uint)
 	if !ok {
@@ -210,7 +223,7 @@ func CreateProductItemTrack(c *fiber.Ctx) error {
 		return helper.Fail(c, 401, "User not authenticated", "Failed to get user ID from token")
 	}
 
-	result, err := productItemTrackService.CreateProductItemTrack(req.ProductItemID, req.ProductStockID, req.ProductID, req.ProductBatchID, req.UnitPrice, req.StockIn, req.StockOut, req.Quantity, req.Operation, req.Stock, req.Action, userID)
+	result, err := productItemTrackService.CreateProductItemTrack(req.ProductItemID, req.ProductStockID, req.ProductID, req.ProductBatchID, parsedDate, req.UnitPrice, req.StockIn, req.StockOut, req.Quantity, req.Operation, req.Stock, req.Description, req.Action, userID)
 	if err != nil {
 		log.Printf("[PRODUCT_ITEM_TRACK] Create failed, error: %v", err)
 		return helper.Fail(c, 400, "Failed to create product item track", err.Error())
@@ -236,6 +249,17 @@ func UpdateProductItemTrack(c *fiber.Ctx) error {
 		return helper.Fail(c, 400, "Invalid request body", err.Error())
 	}
 
+	// Parse date if provided
+	var parsedDate *time.Time
+	if req.Date != nil && *req.Date != "" {
+		date, err := time.Parse("2006-01-02", *req.Date)
+		if err != nil {
+			log.Printf("[PRODUCT_ITEM_TRACK] Update failed - Invalid date format: %s, error: %v", *req.Date, err)
+			return helper.Fail(c, 400, "Invalid date format", "Date must be in YYYY-MM-DD format")
+		}
+		parsedDate = &date
+	}
+
 	// Get user ID from JWT token
 	userID, ok := c.Locals("user_id").(uint)
 	if !ok {
@@ -243,7 +267,7 @@ func UpdateProductItemTrack(c *fiber.Ctx) error {
 		return helper.Fail(c, 401, "User not authenticated", "Failed to get user ID from token")
 	}
 
-	result, err := productItemTrackService.UpdateProductItemTrack(uint(idUint), req.UnitPrice, req.Quantity, req.Operation, req.Stock, userID)
+	result, err := productItemTrackService.UpdateProductItemTrack(uint(idUint), parsedDate, req.UnitPrice, req.Quantity, req.Operation, req.Stock, req.Description, userID)
 	if err != nil {
 		log.Printf("[PRODUCT_ITEM_TRACK] Update failed - Track ID: %d, error: %v", idUint, err)
 		return helper.Fail(c, 400, "Failed to update product item track", err.Error())

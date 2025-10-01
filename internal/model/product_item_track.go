@@ -18,11 +18,12 @@ type ProductItemTrack struct {
 	ProductID      uint `gorm:"not null" json:"product_id"`
 
 	// Track Information
-	Quantity    float64 `gorm:"not null" json:"quantity"`
-	Operation   string  `gorm:"type:varchar(10);not null" json:"operation"` // Plus, Minus
-	Stock       float64 `gorm:"not null" json:"stock"`
-	UnitPrice   *string `json:"unit_price"`
-	Description *string `gorm:"type:text" json:"description"`
+	Date        time.Time `gorm:"not null" json:"date"`
+	Quantity    float64   `gorm:"not null" json:"quantity"`
+	Operation   string    `gorm:"type:varchar(10);not null" json:"operation"` // Plus, Minus
+	Stock       float64   `gorm:"not null" json:"stock"`
+	UnitPrice   *string   `json:"unit_price"`
+	Description *string   `gorm:"type:text" json:"description"`
 
 	// Audit Trail Fields
 	UserIns  *uint `json:"user_ins,omitempty"`
