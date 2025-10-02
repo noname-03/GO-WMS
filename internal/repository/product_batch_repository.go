@@ -17,6 +17,7 @@ type productBatchWithDetailsResponse struct {
 	CategoryName string    `json:"categoryName"`
 	BrandID      uint      `json:"brandId"`
 	BrandName    string    `json:"brandName"`
+	UnitPrice    *float64  `json:"unitPrice"`
 	CodeBatch    string    `json:"codeBatch"`
 	ExpDate      time.Time `json:"expDate"` // Hidden dari JSON
 	Description  *string   `json:"description"`
@@ -30,7 +31,7 @@ func (r *ProductBatchRepository) GetAllProductBatches() ([]productBatchWithDetai
 	var batches []productBatchWithDetailsResponse
 
 	result := database.DB.Table("product_batches pb").
-		Select("pb.id, pb.product_id, p.name as product_name, c.id as category_id, c.name as category_name, b.id as brand_id, b.name as brand_name, pb.code_batch, pb.exp_date, pb.description").
+		Select("pb.id, pb.product_id, p.name as product_name, c.id as category_id, c.name as category_name, b.id as brand_id, b.name as brand_name, pb.unit_price,pb.code_batch, pb.exp_date, pb.description").
 		Joins("LEFT JOIN products p ON pb.product_id = p.id AND p.deleted_at IS NULL").
 		Joins("LEFT JOIN categories c ON p.category_id = c.id AND c.deleted_at IS NULL").
 		Joins("LEFT JOIN brands b ON c.brand_id = b.id AND b.deleted_at IS NULL").
@@ -45,7 +46,7 @@ func (r *ProductBatchRepository) GetProductBatchesByProduct(productID uint) ([]p
 	var batches []productBatchWithDetailsResponse
 
 	result := database.DB.Table("product_batches pb").
-		Select("pb.id, pb.product_id, p.name as product_name, c.id as category_id, c.name as category_name, b.id as brand_id, b.name as brand_name, pb.code_batch, pb.exp_date, pb.description").
+		Select("pb.id, pb.product_id, p.name as product_name, c.id as category_id, c.name as category_name, b.id as brand_id, b.name as brand_name,pb.unit_price, pb.code_batch, pb.exp_date, pb.description").
 		Joins("INNER JOIN products p ON pb.product_id = p.id AND p.deleted_at IS NULL").
 		Joins("INNER JOIN categories c ON p.category_id = c.id AND c.deleted_at IS NULL").
 		Joins("INNER JOIN brands b ON c.brand_id = b.id AND b.deleted_at IS NULL").
@@ -60,7 +61,7 @@ func (r *ProductBatchRepository) GetProductBatchByID(id uint) (productBatchWithD
 	var batch productBatchWithDetailsResponse
 
 	result := database.DB.Table("product_batches pb").
-		Select("pb.id, pb.product_id, p.name as product_name, c.id as category_id, c.name as category_name, b.id as brand_id, b.name as brand_name, pb.code_batch, pb.exp_date, pb.description").
+		Select("pb.id, pb.product_id, p.name as product_name, c.id as category_id, c.name as category_name, b.id as brand_id, b.name as brand_name,pb.unit_price, pb.code_batch, pb.exp_date, pb.description").
 		Joins("INNER JOIN products p ON pb.product_id = p.id AND p.deleted_at IS NULL").
 		Joins("INNER JOIN categories c ON p.category_id = c.id AND c.deleted_at IS NULL").
 		Joins("INNER JOIN brands b ON c.brand_id = b.id AND b.deleted_at IS NULL").
@@ -112,7 +113,7 @@ func (r *ProductBatchRepository) GetDeletedProductBatches() ([]productBatchWithD
 	var batches []productBatchWithDetailsResponse
 
 	result := database.DB.Table("product_batches pb").
-		Select("pb.id, pb.product_id, p.name as product_name, c.id as category_id, c.name as category_name, b.id as brand_id, b.name as brand_name, pb.code_batch, pb.exp_date, pb.description").
+		Select("pb.id, pb.product_id, p.name as product_name, c.id as category_id, c.name as category_name, b.id as brand_id, b.name as brand_name,pb.unit_price, pb.code_batch, pb.exp_date, pb.description").
 		Joins("LEFT JOIN products p ON pb.product_id = p.id").
 		Joins("LEFT JOIN categories c ON p.category_id = c.id").
 		Joins("LEFT JOIN brands b ON c.brand_id = b.id").
