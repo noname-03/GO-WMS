@@ -245,3 +245,43 @@ func DeleteProductUnit(c *fiber.Ctx) error {
 	log.Printf("[PRODUCT_UNIT] Delete product unit successful - Product Unit ID: %d", idUint)
 	return helper.Success(c, 200, "Product unit deleted successfully", nil)
 }
+
+func GetDeletedProductUnits(c *fiber.Ctx) error {
+	log.Printf("[PRODUCT_UNIT] Get deleted product units request from IP: %s", c.IP())
+
+	units, err := productUnitService.GetDeletedProductUnits()
+	if err != nil {
+		log.Printf("[PRODUCT_UNIT] Get deleted product units failed - error: %v", err)
+		return helper.Fail(c, 500, "Failed to fetch deleted product units", err.Error())
+	}
+
+	log.Printf("[PRODUCT_UNIT] Get deleted product units successful")
+	return helper.Success(c, 200, "Success", units)
+}
+
+func RestoreProductUnit(c *fiber.Ctx) error {
+	id := c.Params("id")
+	log.Printf("[PRODUCT_UNIT] Restore product unit request - ID: %s from IP: %s", id, c.IP())
+
+	idUint, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		log.Printf("[PRODUCT_UNIT] Restore product unit failed - Invalid ID: %s, error: %v", id, err)
+		return helper.Fail(c, 400, "Invalid product unit ID", err.Error())
+	}
+
+	userID, ok := c.Locals("user_id").(uint)
+	if !ok {
+		log.Printf("[PRODUCT_UNIT] Restore product unit failed - User not authenticated for Product Unit ID: %d", idUint)
+		return helper.Fail(c, 401, "User not authenticated", "Failed to get user ID from token")
+	}
+
+	unit, err := productUnitService.RestoreProductUnit(uint(idUint), userID)
+	if err != nil {
+		log.Printf("[PRODUCT_UNIT] Restore product unit failed - Product Unit ID: %d, error: %v", idUint, err)
+		statusCode, message := handleProductUnitError(err)
+		return helper.Fail(c, statusCode, message, err.Error())
+	}
+
+	log.Printf("[PRODUCT_UNIT] Restore product unit successful - Product Unit ID: %d, Restored by User ID: %d", idUint, userID)
+	return helper.Success(c, 200, "Product unit restored successfully", unit)
+}

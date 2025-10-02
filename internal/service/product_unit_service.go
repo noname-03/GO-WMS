@@ -368,3 +368,29 @@ func (s *ProductUnitService) DeleteProductUnit(id uint, userID uint) error {
 
 	return s.productUnitRepo.DeleteProductUnitWithAudit(id, userID)
 }
+
+// GetDeletedProductUnits returns all soft deleted product units
+func (s *ProductUnitService) GetDeletedProductUnits() (interface{}, error) {
+	return s.productUnitRepo.GetDeletedProductUnits()
+}
+
+// RestoreProductUnit restores a soft deleted product unit
+func (s *ProductUnitService) RestoreProductUnit(id uint, userID uint) (interface{}, error) {
+	if id == 0 {
+		return nil, errors.New("invalid product unit ID")
+	}
+	if userID == 0 {
+		return nil, errors.New("user ID is required for audit trail")
+	}
+
+	err := s.productUnitRepo.RestoreProductUnit(id, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	restoredUnit, err := s.productUnitRepo.GetProductUnitByID(id)
+	if err != nil {
+		return nil, err
+	}
+	return restoredUnit, nil
+}

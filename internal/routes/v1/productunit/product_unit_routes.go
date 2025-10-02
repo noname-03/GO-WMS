@@ -16,6 +16,9 @@ func ProductUnitRoutes(router fiber.Router) {
 	// GET /api/v1/product-units - Get all product units
 	productUnit.Get("/", handler.GetProductUnits)
 
+	// GET /api/v1/product-units/deleted - Get deleted product units
+	productUnit.Get("/deleted", handler.GetDeletedProductUnits)
+
 	// GET /api/v1/product-units/product/:productId - Get product units by product ID
 	productUnit.Get("/product/:productId", handler.GetProductUnitsByProduct)
 
@@ -27,6 +30,9 @@ func ProductUnitRoutes(router fiber.Router) {
 
 	// PUT /api/v1/product-units/:id - Update product unit by ID
 	productUnit.Put("/:id", handler.UpdateProductUnit)
+
+	// PUT /api/v1/product-units/:id/restore - Restore deleted product unit
+	productUnit.Put("/:id/restore", handler.RestoreProductUnit)
 
 	// DELETE /api/v1/product-units/:id - Delete product unit by ID
 	productUnit.Delete("/:id", handler.DeleteProductUnit)

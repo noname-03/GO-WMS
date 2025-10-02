@@ -168,3 +168,28 @@ func (r *ProductUnitRepository) GetProductUnitByBarcode(barcode string) (product
 		First(&unit)
 	return unit, result.Error
 }
+
+// GetDeletedProductUnits returns all soft deleted product units
+func (r *ProductUnitRepository) GetDeletedProductUnits() ([]productUnitResponse, error) {
+	var units []productUnitResponse
+
+	result := database.DB.Table("product_units pu").
+		Select("pu.id, pu.product_id, p.name as product_name, pu.location_id, l.name as location_name, pu.product_batch_id, pb.code_batch as product_batch_name, pu.name, pu.quantity, pu.unit_price, pu.barcode, pu.description").
+		Joins("LEFT JOIN products p ON pu.product_id = p.id").
+		Joins("LEFT JOIN locations l ON pu.location_id = l.id").
+		Joins("LEFT JOIN product_batches pb ON pu.product_batch_id = pb.id").
+		Where("pu.deleted_at IS NOT NULL").
+		Order("pu.deleted_at DESC").
+		Find(&units)
+
+	return units, result.Error
+}
+
+// RestoreProductUnit restores a soft deleted product unit
+func (r *ProductUnitRepository) RestoreProductUnit(id uint, userID uint) error {
+	updateData := map[string]interface{}{
+		"user_updt":  userID,
+		"deleted_at": nil,
+	}
+	return database.DB.Unscoped().Model(&model.ProductUnit{}).Where("id = ?", id).Updates(updateData).Error
+}

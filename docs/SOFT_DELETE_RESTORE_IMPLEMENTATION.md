@@ -8,6 +8,7 @@
 | ✅ Category | ✅ GetDeletedCategories<br>✅ RestoreCategory | ✅ GetDeletedCategories<br>✅ RestoreCategory | ✅ GetDeletedCategories<br>✅ RestoreCategory | ✅ GET /deleted<br>✅ PUT /:id/restore | **COMPLETE** |
 | ✅ Product | ✅ GetDeletedProducts<br>✅ RestoreProduct | ✅ GetDeletedProducts<br>✅ RestoreProduct | ✅ GetDeletedProducts<br>✅ RestoreProduct | ✅ GET /deleted<br>✅ PUT /:id/restore | **COMPLETE** |
 | ✅ ProductBatch | ✅ GetDeletedProductBatches<br>✅ RestoreProductBatch | ✅ GetDeletedProductBatches<br>✅ RestoreProductBatch | ✅ GetDeletedProductBatches<br>✅ RestoreProductBatch | ✅ GET /deleted<br>✅ PUT /:id/restore | **COMPLETE** |
+| ✅ ProductUnit | ✅ GetDeletedProductUnits<br>✅ RestoreProductUnit | ✅ GetDeletedProductUnits<br>✅ RestoreProductUnit | ✅ GetDeletedProductUnits<br>✅ RestoreProductUnit | ✅ GET /deleted<br>✅ PUT /:id/restore | **COMPLETE** |
 | ✅ Location | ✅ GetDeletedLocations<br>✅ RestoreLocation | ✅ GetDeletedLocations<br>✅ RestoreLocation | ✅ GetDeletedLocations<br>✅ RestoreLocation | ✅ GET /deleted<br>✅ PUT /:id/restore | **COMPLETE** |
 | ✅ User | ✅ GetDeletedUsers<br>✅ RestoreUser | ✅ GetDeletedUsers<br>✅ RestoreUser | ✅ GetDeletedUsers<br>✅ RestoreUser | ✅ GET /deleted<br>✅ PUT /:id/restore | **COMPLETE** |
 | ✅ Role | ✅ GetDeletedRoles<br>✅ RestoreRole | ✅ GetDeletedRoles<br>✅ RestoreRole | ✅ GetDeletedRoles<br>✅ RestoreRole | ✅ GET /deleted<br>✅ PUT /:id/restore | **COMPLETE** |
@@ -30,15 +31,19 @@
 - `GET /api/v1/product-batches/deleted` - Melihat semua product batch yang sudah dihapus
 - `PUT /api/v1/product-batches/:id/restore` - Restore product batch yang sudah dihapus
 
-#### 5. Location
+#### 5. Product Unit
+- `GET /api/v1/product-units/deleted` - Melihat semua product unit yang sudah dihapus
+- `PUT /api/v1/product-units/:id/restore` - Restore product unit yang sudah dihapus
+
+#### 6. Location
 - `GET /api/v1/locations/deleted` - Melihat semua location yang sudah dihapus
 - `PUT /api/v1/locations/:id/restore` - Restore location yang sudah dihapus
 
-#### 6. User
+#### 7. User
 - `GET /api/v1/users/deleted` - Melihat semua user yang sudah dihapus
 - `PUT /api/v1/users/:id/restore` - Restore user yang sudah dihapus
 
-#### 7. Role
+#### 8. Role
 - `GET /api/v1/roles/deleted` - Melihat semua role yang sudah dihapus
 - `PUT /api/v1/roles/:id/restore` - Restore role yang sudah dihapus
 
@@ -201,4 +206,4 @@ Semua 7 model utama telah berhasil diimplementasikan dengan:
 - ✅ Database relationship preservation
 - ✅ Response format consistency
 
-**Total Endpoints Added: 14 endpoints (7 GET deleted + 7 PUT restore)**
+**Total Endpoints Added: 16 endpoints (8 GET deleted + 8 PUT restore)**
