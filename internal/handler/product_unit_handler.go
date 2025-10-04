@@ -78,25 +78,27 @@ func handleProductUnitError(err error) (int, string) {
 }
 
 type CreateProductUnitRequest struct {
-	ProductID      uint     `json:"productId" validate:"required"`
-	LocationID     uint     `json:"locationId" validate:"required"`
-	ProductBatchID uint     `json:"productBatchId" validate:"required"`
-	Name           *string  `json:"name"`
-	Quantity       *float64 `json:"quantity"`
-	UnitPrice      *float64 `json:"unitPrice"`
-	Barcode        *string  `json:"barcode"`
-	Description    *string  `json:"description"`
+	ProductID       uint     `json:"productId" validate:"required"`
+	LocationID      uint     `json:"locationId" validate:"required"`
+	ProductBatchID  uint     `json:"productBatchId" validate:"required"`
+	Name            *string  `json:"name"`
+	Quantity        *float64 `json:"quantity"`
+	UnitPrice       *float64 `json:"unitPrice"`
+	UnitPriceRetail *float64 `json:"unitPriceRetail"`
+	Barcode         *string  `json:"barcode"`
+	Description     *string  `json:"description"`
 }
 
 type UpdateProductUnitRequest struct {
-	ProductID      uint     `json:"productId" validate:"required"`
-	LocationID     uint     `json:"locationId" validate:"required"`
-	ProductBatchID uint     `json:"productBatchId" validate:"required"`
-	Name           *string  `json:"name"`
-	Quantity       *float64 `json:"quantity"`
-	UnitPrice      *float64 `json:"unitPrice"`
-	Barcode        *string  `json:"barcode"`
-	Description    *string  `json:"description"`
+	ProductID       uint     `json:"productId" validate:"required"`
+	LocationID      uint     `json:"locationId" validate:"required"`
+	ProductBatchID  uint     `json:"productBatchId" validate:"required"`
+	Name            *string  `json:"name"`
+	Quantity        *float64 `json:"quantity"`
+	UnitPrice       *float64 `json:"unitPrice"`
+	UnitPriceRetail *float64 `json:"unitPriceRetail"`
+	Barcode         *string  `json:"barcode"`
+	Description     *string  `json:"description"`
 }
 
 func GetProductUnits(c *fiber.Ctx) error {
@@ -171,7 +173,7 @@ func CreateProductUnit(c *fiber.Ctx) error {
 
 	log.Printf("[PRODUCT_UNIT] Creating product unit with audit - User ID: %d, Product ID: %d, Product Batch ID: %d", userID, req.ProductID, req.ProductBatchID)
 
-	productUnit, err := productUnitService.CreateProductUnit(req.ProductID, req.LocationID, req.ProductBatchID, req.Name, req.Quantity, req.UnitPrice, req.Barcode, req.Description, userID)
+	productUnit, err := productUnitService.CreateProductUnit(req.ProductID, req.LocationID, req.ProductBatchID, req.Name, req.Quantity, req.UnitPrice, req.UnitPriceRetail, req.Barcode, req.Description, userID)
 	if err != nil {
 		log.Printf("[PRODUCT_UNIT] Create product unit failed - Product ID: %d, User ID: %d, error: %v", req.ProductID, userID, err)
 		statusCode, message := handleProductUnitError(err)
@@ -207,7 +209,7 @@ func UpdateProductUnit(c *fiber.Ctx) error {
 
 	log.Printf("[PRODUCT_UNIT] Updating product unit with audit - Product Unit ID: %d, User ID: %d, Product Batch ID: %d", idUint, userID, req.ProductBatchID)
 
-	productUnit, err := productUnitService.UpdateProductUnit(uint(idUint), req.ProductID, req.LocationID, req.ProductBatchID, req.Name, req.Quantity, req.UnitPrice, req.Barcode, req.Description, userID)
+	productUnit, err := productUnitService.UpdateProductUnit(uint(idUint), req.ProductID, req.LocationID, req.ProductBatchID, req.Name, req.Quantity, req.UnitPrice, req.UnitPriceRetail, req.Barcode, req.Description, userID)
 	if err != nil {
 		log.Printf("[PRODUCT_UNIT] Update product unit failed - Product Unit ID: %d, User ID: %d, error: %v", idUint, userID, err)
 		statusCode, message := handleProductUnitError(err)

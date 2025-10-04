@@ -49,7 +49,7 @@ func (s *ProductUnitService) GetProductUnitByID(id uint) (interface{}, error) {
 	return unit, nil
 }
 
-func (s *ProductUnitService) CreateProductUnit(productID uint, locationID uint, productBatchID uint, name *string, quantity *float64, unitPrice *float64, barcode *string, description *string, userID uint) (interface{}, error) {
+func (s *ProductUnitService) CreateProductUnit(productID uint, locationID uint, productBatchID uint, name *string, quantity *float64, unitPrice *float64, unitPriceRetail *float64, barcode *string, description *string, userID uint) (interface{}, error) {
 	if productID == 0 {
 		return nil, errors.New("product ID is required")
 	}
@@ -133,15 +133,16 @@ func (s *ProductUnitService) CreateProductUnit(productID uint, locationID uint, 
 	}
 
 	productUnit := &model.ProductUnit{
-		ProductID:      productID,
-		LocationID:     locationID,
-		ProductBatchID: productBatchID,
-		Name:           name,
-		Quantity:       quantity,
-		UnitPrice:      unitPrice,
-		Barcode:        barcode,
-		Description:    description,
-		UserIns:        &userID,
+		ProductID:       productID,
+		LocationID:      locationID,
+		ProductBatchID:  productBatchID,
+		Name:            name,
+		Quantity:        quantity,
+		UnitPrice:       unitPrice,
+		UnitPriceRetail: unitPriceRetail,
+		Barcode:         barcode,
+		Description:     description,
+		UserIns:         &userID,
 	}
 
 	err = s.productUnitRepo.CreateProductUnit(productUnit)
@@ -165,7 +166,7 @@ func (s *ProductUnitService) CreateProductUnit(productID uint, locationID uint, 
 	return res, nil
 }
 
-func (s *ProductUnitService) UpdateProductUnit(id uint, productID uint, locationID uint, productBatchID uint, name *string, quantity *float64, UnitPrice *float64, barcode *string, description *string, userID uint) (interface{}, error) {
+func (s *ProductUnitService) UpdateProductUnit(id uint, productID uint, locationID uint, productBatchID uint, name *string, quantity *float64, UnitPrice *float64, unitPriceRetail *float64, barcode *string, description *string, userID uint) (interface{}, error) {
 	if id == 0 {
 		return nil, errors.New("invalid product unit ID")
 	}
@@ -317,6 +318,9 @@ func (s *ProductUnitService) UpdateProductUnit(id uint, productID uint, location
 	}
 	if UnitPrice != nil {
 		updateData["unit_price"] = UnitPrice
+	}
+	if unitPriceRetail != nil {
+		updateData["unit_price_retail"] = unitPriceRetail
 	}
 	if barcode != nil {
 		updateData["barcode"] = barcode

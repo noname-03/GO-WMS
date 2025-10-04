@@ -13,14 +13,15 @@ type ProductUnit struct {
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 
 	// Foreign Key to Product
-	ProductID      uint     `gorm:"not null" json:"product_id"`
-	LocationID     uint     `gorm:"not null" json:"location_id"`
-	ProductBatchID uint     `gorm:"not null" json:"product_batch_id"`
-	Name           *string  `json:"name"`        // Nullable name
-	Quantity       *float64 `json:"quantity"`    // Nullable quantity
-	UnitPrice      *float64 `json:"unit_price"`  // Nullable unit price
-	Barcode        *string  `json:"barcode"`     // Nullable barcode
-	Description    *string  `json:"description"` // Nullable description
+	ProductID       uint     `gorm:"not null" json:"product_id"`
+	LocationID      uint     `gorm:"not null" json:"location_id"`
+	ProductBatchID  uint     `gorm:"not null" json:"product_batch_id"`
+	Name            *string  `json:"name"`              // Nullable name
+	Quantity        *float64 `json:"quantity"`          // Nullable quantity
+	UnitPrice       *float64 `json:"unit_price"`        // Nullable unit price
+	UnitPriceRetail *float64 `json:"unit_price_retail"` // Nullable retail unit price
+	Barcode         *string  `json:"barcode"`           // Nullable barcode
+	Description     *string  `json:"description"`       // Nullable description
 	// Audit Trail Fields
 	UserIns  *uint `json:"user_ins,omitempty"`  // Pointer untuk allow null
 	UserUpdt *uint `json:"user_updt,omitempty"` // Pointer untuk allow null
