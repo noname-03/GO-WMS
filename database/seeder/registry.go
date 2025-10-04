@@ -26,6 +26,7 @@ func GetAllSeeders() *SeederRegistry {
 	registry.Register(NewProductStockTrackSeeder())
 	registry.Register(NewProductItemSeeder())
 	registry.Register(NewProductItemTrackSeeder())
+	registry.Register(NewFileSeeder()) // Files - depends on other models
 	// registry.Register(NewWarehouseSeeder())
 
 	// Future seeders:

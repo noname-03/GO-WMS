@@ -196,15 +196,6 @@ func (s *ProductUnitSeeder) Seed(db *gorm.DB) error {
 	return nil
 }
 
-// Helper functions
-func stringPtr(s string) *string {
-	return &s
-}
-
-func float64Ptr(f float64) *float64 {
-	return &f
-}
-
 func getLocationID(locations []model.Location, index int) uint {
 	if len(locations) == 0 {
 		log.Printf("⚠️  Warning: No locations available, returning 1 as default")

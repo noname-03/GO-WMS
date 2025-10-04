@@ -4,6 +4,7 @@ import (
 	"myapp/internal/routes/v1/auth"
 	"myapp/internal/routes/v1/brand"
 	"myapp/internal/routes/v1/category"
+	"myapp/internal/routes/v1/file"
 	"myapp/internal/routes/v1/location"
 	"myapp/internal/routes/v1/product"
 	"myapp/internal/routes/v1/productbatch"
@@ -14,6 +15,7 @@ import (
 	"myapp/internal/routes/v1/productunit"
 	"myapp/internal/routes/v1/productunittrack"
 	"myapp/internal/routes/v1/role"
+	"myapp/internal/routes/v1/s3test"
 	"myapp/internal/routes/v1/user"
 
 	"github.com/gofiber/fiber/v2"
@@ -32,6 +34,7 @@ func SetupV1Routes(app *fiber.App) {
 	role.SetupRoleRoutes(v1)
 	brand.SetupBrandRoutes(v1)
 	category.SetupCategoryRoutes(v1)
+	file.SetupFileRoutes(v1)
 	product.RegisterProductRoutes(v1)
 	productbatch.RegisterProductBatchRoutes(v1)
 	productunit.ProductUnitRoutes(v1)
@@ -41,6 +44,9 @@ func SetupV1Routes(app *fiber.App) {
 	productstocktrack.ProductStockTrackRoutes(v1)
 	productitem.ProductItemRoutes(v1)
 	productitemtrack.ProductItemTrackRoutes(v1)
+
+	// S3 test routes (for debugging)
+	s3test.SetupS3TestRoutes(v1)
 
 	// Future modules
 	// order.SetupOrderRoutes(v1)
