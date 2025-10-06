@@ -144,3 +144,17 @@ func (r *FileRepository) CheckModelExists(modelType string, modelID uint) (bool,
 		return false, nil
 	}
 }
+
+// UpdateFileURL updates file URL after S3 upload
+func (r *FileRepository) UpdateFileURL(id uint, fileURL string, userID uint) error {
+	updateData := map[string]interface{}{
+		"file_url":  fileURL,
+		"user_updt": userID,
+	}
+	return database.DB.Model(&model.File{}).Where("id = ?", id).Updates(updateData).Error
+}
+
+// DeleteFile deletes a file record (alias for DeleteFileWithAudit)
+func (r *FileRepository) DeleteFile(id uint, userID uint) error {
+	return r.DeleteFileWithAudit(id, userID)
+}

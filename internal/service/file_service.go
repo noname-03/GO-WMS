@@ -131,25 +131,35 @@ func (s *FileService) UploadFile(modelType string, modelID uint, ext string, fil
 		return nil, errors.New("invalid file extension. allowed: jpg, jpeg, png, gif, pdf, doc, docx, xls, xlsx")
 	}
 
-	// Upload to S3 with dynamic path
-	fileURL, err := s.s3Client.UploadFile(fileData, strings.ToLower(modelType), modelID, extLower)
-	if err != nil {
-		return nil, errors.New("failed to upload file to S3: " + err.Error())
-	}
-
+	// Step 1: Insert file record to database first (to get auto-increment ID)
 	file := &model.File{
 		ModelType: strings.ToLower(modelType),
 		ModelID:   modelID,
 		Ext:       extLower,
-		FileURL:   &fileURL,
+		FileURL:   nil, // Will be updated after S3 upload
 		UserIns:   &userID,
 	}
 
 	err = s.fileRepo.CreateFile(file)
 	if err != nil {
-		// If database save fails, try to delete the uploaded file from S3
+		return nil, errors.New("failed to create file record: " + err.Error())
+	}
+
+	// Step 2: Upload to S3 using the database ID as filename
+	fileURL, err := s.s3Client.UploadFile(fileData, strings.ToLower(modelType), file.ID, extLower)
+	if err != nil {
+		// If S3 upload fails, delete the database record
+		s.fileRepo.DeleteFile(file.ID, userID)
+		return nil, errors.New("failed to upload file to S3: " + err.Error())
+	}
+
+	// Step 3: Update the file record with S3 URL
+	err = s.fileRepo.UpdateFileURL(file.ID, fileURL, userID)
+	if err != nil {
+		// If database update fails, try to delete the uploaded file from S3
 		s.s3Client.DeleteFile(fileURL)
-		return nil, err
+		s.fileRepo.DeleteFile(file.ID, userID)
+		return nil, errors.New("failed to update file URL: " + err.Error())
 	}
 
 	// Fetch the created file with user details
