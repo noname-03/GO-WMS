@@ -23,6 +23,7 @@ func Migrate() error {
 		&model.ProductStockTrack{},
 		&model.ProductItem{},
 		&model.ProductItemTrack{},
+		&model.File{},
 	)
 	if err != nil {
 		log.Println("Migration failed:", err)
