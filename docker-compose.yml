@@ -1,9 +1,6 @@
-version: '3.8'
-
 services:
   app:
     build: .
-    container_name: go-app
     working_dir: /app
     volumes:
       - .:/app
@@ -28,7 +25,6 @@ services:
 
   db:
     image: postgres:16-alpine
-    container_name: postgres-db
     restart: always
     environment:
       POSTGRES_USER: postgres
@@ -41,7 +37,6 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: redis-server
     restart: always
     ports:
       - "6379:6379"
