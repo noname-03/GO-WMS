@@ -11,4 +11,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger EasyPanel Deploy
-        run: curl -X POST "http://52.63.176.112:3000/api/deploy/23f5dec915cd9521af754997af0725ac53add856639728c3"
+        run: curl -X POST "http://52.63.176.112:3000/api/compose/deploy/48bda4073745cf095b42975c310226861c8e1816d5f944f1"
