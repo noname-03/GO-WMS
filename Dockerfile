@@ -1,24 +1,46 @@
-FROM golang:1.23-alpine
+# Stage 1: builder
+FROM golang:1.23-alpine AS builder
 
 WORKDIR /app
 
-# Install git, curl, dan dependencies lain yang diperlukan
+# Install git, curl, bash
 RUN apk add --no-cache git curl bash
 
-# Download dan install Air binary secara langsung
-RUN curl -sSfL https://raw.githubusercontent.com/cosmtrek/air/master/install.sh | sh -s -- -b /usr/local/bin
-
-# Copy go.mod dan go.sum untuk cache dependencies
 COPY go.mod go.sum ./
-
-# Download dependencies
 RUN go mod download
 
-# Copy semua source code
 COPY . .
 
-# Expose port aplikasi
+# Build binary (output: /app/app)
+RUN go build -o app
+
+# Stage 2: dev (pakai air)
+FROM golang:1.23-alpine AS dev
+
+WORKDIR /app
+RUN apk add --no-cache git curl bash
+
+# Download Air
+RUN curl -sSfL https://raw.githubusercontent.com/cosmtrek/air/master/install.sh | sh -s -- -b /usr/local/bin
+
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+
 EXPOSE 8080
 
-# Gunakan air untuk hot reload
 CMD ["air"]
+
+# Stage 3: production
+FROM alpine:latest AS prod
+
+WORKDIR /app
+
+COPY --from=builder /app/app .
+
+EXPOSE 8080
+
+CMD ["./app"]
+
+# Final stage: conditional
+# Default to "dev", override with --target prod for production

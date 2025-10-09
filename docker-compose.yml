@@ -1,6 +1,9 @@
+version: "3.8"
 services:
   app:
-    build: .
+    build:
+      context: .
+      target: ${BUILD_TARGET:-prod}   # Bisa dev (default) atau prod
     working_dir: /app
     volumes:
       - .:/app
