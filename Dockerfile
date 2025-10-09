@@ -21,5 +21,6 @@ CMD ["air"]
 FROM alpine:latest AS prod
 WORKDIR /app
 COPY --from=builder /app/app .
+COPY .env .env
 EXPOSE 8080
 CMD ["./app"]
