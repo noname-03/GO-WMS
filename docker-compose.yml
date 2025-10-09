@@ -3,10 +3,11 @@ services:
   app:
     build:
       context: .
-      target: ${BUILD_TARGET:-prod}   # Bisa dev (default) atau prod
+      target: ${BUILD_TARGET:-prod}   # default prod
     working_dir: /app
-    volumes:
-      - .:/app
+    # Untuk production, COMMENT/HAPUS baris di bawah:
+    # volumes:
+    #   - .:/app
     environment:
       DB_HOST: db
       DB_PORT: 5432
