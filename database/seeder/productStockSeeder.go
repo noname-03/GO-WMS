@@ -94,15 +94,18 @@ func (s *ProductStockSeeder) Seed(db *gorm.DB) error {
 		result := db.Where("product_batch_id = ? AND product_id = ? AND location_id = ?",
 			stock.ProductBatchID, stock.ProductID, stock.LocationID).First(&existing)
 
-		if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
 			// ProductStock doesn't exist, create it
 			if err := db.Create(&stock).Error; err != nil {
-				log.Printf("❌ Failed to create product stock for product ID %d batch ID %d: %v",
+				log.Printf("⚠️  ProductStockSeeder: Failed to create stock for product ID %d batch ID %d (might be duplicate), skipping: %v",
 					stock.ProductID, stock.ProductBatchID, err)
-				return err
+				continue
 			}
 			log.Printf("✅ Product stock created for product ID %d at location ID %v - Qty: %.2f",
 				stock.ProductID, stock.LocationID, *stock.Quantity)
+		} else if result.Error != nil {
+			log.Printf("⚠️  ProductStockSeeder: Database error for product ID %d, skipping: %v", stock.ProductID, result.Error)
+			continue
 		} else {
 			log.Printf("✅ ProductStockSeeder: Stock for product ID %d batch ID %d at location ID %v already exists, skipping...",
 				stock.ProductID, stock.ProductBatchID, stock.LocationID)

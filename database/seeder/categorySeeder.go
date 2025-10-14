@@ -57,13 +57,17 @@ func (s *CategorySeeder) Seed(db *gorm.DB) error {
 	for _, category := range categories {
 		var existing model.Category
 		result := db.Where("name = ? AND brand_id = ?", category.Name, category.BrandID).First(&existing)
-		if result.Error != nil {
+
+		if result.Error == gorm.ErrRecordNotFound {
 			// Category doesn't exist, create it
 			if err := db.Create(&category).Error; err != nil {
-				log.Printf("❌ Failed to seed category %s for brand ID %d: %v", category.Name, category.BrandID, err)
-				return err
+				log.Printf("⚠️  CategorySeeder: Failed to seed category %s for brand ID %d (might be duplicate), skipping: %v", category.Name, category.BrandID, err)
+				continue
 			}
 			log.Printf("✅ Category '%s' for brand ID %d created successfully", category.Name, category.BrandID)
+		} else if result.Error != nil {
+			log.Printf("⚠️  CategorySeeder: Database error for category %s, skipping: %v", category.Name, result.Error)
+			continue
 		} else {
 			log.Printf("✅ CategorySeeder: Category '%s' for brand ID %d already exists, skipping...", category.Name, category.BrandID)
 		}

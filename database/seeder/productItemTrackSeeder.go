@@ -132,14 +132,17 @@ func (s *ProductItemTrackSeeder) Seed(db *gorm.DB) error {
 		result := db.Where("product_stock_id = ? AND date = ? AND quantity = ? AND operation = ?",
 			track.ProductStockID, track.Date, track.Quantity, track.Operation).First(&existing)
 
-		if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
 			// Track doesn't exist, create it
 			if err := db.Create(&track).Error; err != nil {
-				log.Printf("❌ Failed to create product item track for stock ID %d: %v", track.ProductStockID, err)
-				return err
+				log.Printf("⚠️  ProductItemTrackSeeder: Failed to create track for stock ID %d (might be duplicate), skipping: %v", track.ProductStockID, err)
+				continue
 			}
 			log.Printf("✅ Product item track created for stock ID %d - Date: %s, Operation: %s, Qty: %.2f, Stock: %.2f",
 				track.ProductStockID, track.Date.Format("2006-01-02"), track.Operation, track.Quantity, track.Stock)
+		} else if result.Error != nil {
+			log.Printf("⚠️  ProductItemTrackSeeder: Database error for stock ID %d, skipping: %v", track.ProductStockID, result.Error)
+			continue
 		} else {
 			log.Printf("✅ ProductItemTrackSeeder: Track for stock ID %d on %s already exists, skipping...",
 				track.ProductStockID, track.Date.Format("2006-01-02"))

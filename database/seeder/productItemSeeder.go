@@ -120,11 +120,11 @@ func (s *ProductItemSeeder) Seed(db *gorm.DB) error {
 		result := db.Where("product_stock_id = ? AND stock_in = ? AND description = ?",
 			item.ProductStockID, item.StockIn, item.Description).First(&existing)
 
-		if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
 			// Item doesn't exist, create it
 			if err := db.Create(&item).Error; err != nil {
-				log.Printf("❌ Failed to create product item for stock ID %d: %v", item.ProductStockID, err)
-				return err
+				log.Printf("⚠️  ProductItemSeeder: Failed to create item for stock ID %d (might be duplicate), skipping: %v", item.ProductStockID, err)
+				continue
 			}
 
 			stockInVal := 0.0
@@ -143,6 +143,9 @@ func (s *ProductItemSeeder) Seed(db *gorm.DB) error {
 
 			log.Printf("✅ Product item created for stock ID %d - In: %.2f, Out: %.2f, Qty: %.2f",
 				item.ProductStockID, stockInVal, stockOutVal, quantityVal)
+		} else if result.Error != nil {
+			log.Printf("⚠️  ProductItemSeeder: Database error for stock ID %d, skipping: %v", item.ProductStockID, result.Error)
+			continue
 		} else {
 			log.Printf("✅ ProductItemSeeder: Item for stock ID %d already exists, skipping...", item.ProductStockID)
 		}

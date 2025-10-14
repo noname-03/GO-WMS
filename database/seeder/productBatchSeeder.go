@@ -72,13 +72,19 @@ func (s *ProductBatchSeeder) Seed(db *gorm.DB) error {
 		var existing model.ProductBatch
 		// Check by product_id and exp_date to avoid exact duplicates
 		result := db.Where("product_id = ? AND exp_date = ?", batch.ProductID, batch.ExpDate).First(&existing)
-		if result.Error != nil {
+
+		if result.Error == gorm.ErrRecordNotFound {
 			// ProductBatch doesn't exist, create it
 			if err := db.Create(&batch).Error; err != nil {
-				log.Printf("❌ Failed to seed product batch for product ID %d: %v", batch.ProductID, err)
-				return err
+				// If still error (like duplicate key), just skip
+				log.Printf("⚠️  ProductBatchSeeder: Failed to seed product batch for product ID %d (might be duplicate), skipping: %v", batch.ProductID, err)
+				continue
 			}
 			log.Printf("✅ Product batch for product ID %d created successfully", batch.ProductID)
+		} else if result.Error != nil {
+			// Other database error
+			log.Printf("⚠️  ProductBatchSeeder: Database error for product ID %d, skipping: %v", batch.ProductID, result.Error)
+			continue
 		} else {
 			log.Printf("✅ ProductBatchSeeder: Product batch for product ID %d already exists, skipping...", batch.ProductID)
 		}
