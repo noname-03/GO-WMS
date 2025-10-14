@@ -5,6 +5,7 @@ import (
 	"myapp/internal/routes/v1/brand"
 	"myapp/internal/routes/v1/category"
 	"myapp/internal/routes/v1/file"
+	"myapp/internal/routes/v1/inventory"
 	"myapp/internal/routes/v1/location"
 	"myapp/internal/routes/v1/product"
 	"myapp/internal/routes/v1/productbatch"
@@ -44,6 +45,9 @@ func SetupV1Routes(app *fiber.App) {
 	productstocktrack.ProductStockTrackRoutes(v1)
 	productitem.ProductItemRoutes(v1)
 	productitemtrack.ProductItemTrackRoutes(v1)
+
+	// Inventory routes
+	inventory.SetupInventoryRoutes(v1)
 
 	// S3 test routes (for debugging)
 	s3test.SetupS3TestRoutes(v1)
