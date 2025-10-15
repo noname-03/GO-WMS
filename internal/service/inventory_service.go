@@ -15,6 +15,6 @@ func NewInventoryService() *InventoryService {
 }
 
 // GetInventoryStock returns inventory stock information with optional filters
-func (s *InventoryService) GetInventoryStock(brandID, categoryID, productID, productBatchID, locationID *uint) (interface{}, error) {
-	return s.inventoryRepo.GetInventoryStock(brandID, categoryID, productID, productBatchID, locationID)
+func (s *InventoryService) GetInventoryStock(brandID, categoryID, productID, productBatchID, locationID *uint, barcode *string) (interface{}, error) {
+	return s.inventoryRepo.GetInventoryStock(brandID, categoryID, productID, productBatchID, locationID, barcode)
 }

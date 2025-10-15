@@ -21,8 +21,10 @@ func GetInventoryStock(c *fiber.Ctx) error {
 	productIDStr := c.Query("productId")
 	productBatchIDStr := c.Query("productBatchId")
 	locationIDStr := c.Query("locationId")
+	barcodeStr := c.Query("barcode")
 
 	var brandID, categoryID, productID, productBatchID, locationID *uint
+	var barcode *string
 
 	// Parse brandId if provided
 	if brandIDStr != "" {
@@ -79,10 +81,15 @@ func GetInventoryStock(c *fiber.Ctx) error {
 		locationID = &locationIDUint
 	}
 
-	log.Printf("[INVENTORY] Fetching inventory stock - Brand ID: %v, Category ID: %v, Product ID: %v, Product Batch ID: %v, Location ID: %v",
-		brandID, categoryID, productID, productBatchID, locationID)
+	// Parse barcode if provided
+	if barcodeStr != "" {
+		barcode = &barcodeStr
+	}
 
-	results, err := inventoryService.GetInventoryStock(brandID, categoryID, productID, productBatchID, locationID)
+	log.Printf("[INVENTORY] Fetching inventory stock - Brand ID: %v, Category ID: %v, Product ID: %v, Product Batch ID: %v, Location ID: %v, Barcode: %v",
+		brandID, categoryID, productID, productBatchID, locationID, barcode)
+
+	results, err := inventoryService.GetInventoryStock(brandID, categoryID, productID, productBatchID, locationID, barcode)
 	if err != nil {
 		log.Printf("[INVENTORY] Get inventory stock failed - error: %v", err)
 		return helper.Fail(c, 500, "Failed to fetch inventory stock", err.Error())

@@ -17,6 +17,7 @@ type InventoryStockResponse struct {
 	LocationName     string   `json:"locationName"`
 	Stock            *float64 `json:"stock"`
 	ProductUnitPrice *float64 `json:"productUnitPrice"`
+	Barcode          *string  `json:"barcode"`
 	CodeBatch        string   `json:"codeBatch"`
 	PurchasePrice    *float64 `json:"purchasePrice"`
 	ExpDate          *string  `json:"expDate"`
@@ -27,7 +28,7 @@ func NewInventoryRepository() *InventoryRepository {
 }
 
 // GetInventoryStock returns inventory stock information with filters
-func (r *InventoryRepository) GetInventoryStock(brandID, categoryID, productID, productBatchID, locationID *uint) ([]InventoryStockResponse, error) {
+func (r *InventoryRepository) GetInventoryStock(brandID, categoryID, productID, productBatchID, locationID *uint, barcode *string) ([]InventoryStockResponse, error) {
 	var results []InventoryStockResponse
 
 	query := database.DB.Table("brands AS b").
@@ -41,6 +42,7 @@ func (r *InventoryRepository) GetInventoryStock(brandID, categoryID, productID, 
 			l.name AS location_name,
 			ps.quantity AS stock,
 			pu.unit_price AS product_unit_price,
+			pu.barcode AS barcode,
 			pb.code_batch AS code_batch,
 			pb.unit_price AS purchase_price,
 			pb.exp_date AS exp_date`).
@@ -67,6 +69,9 @@ func (r *InventoryRepository) GetInventoryStock(brandID, categoryID, productID, 
 	}
 	if locationID != nil {
 		query = query.Where("l.id = ?", *locationID)
+	}
+	if barcode != nil {
+		query = query.Where("pu.barcode = ?", *barcode)
 	}
 
 	result := query.Order("b.name, c.name, p.name, l.name").Find(&results)
