@@ -24,6 +24,8 @@ func Migrate() error {
 		&model.ProductItem{},
 		&model.ProductItemTrack{},
 		&model.File{},
+		&model.PurchaseOrder{},
+		&model.PurchaseOrderItem{},
 	)
 	if err != nil {
 		log.Println("Migration failed:", err)

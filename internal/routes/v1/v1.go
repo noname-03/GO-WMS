@@ -15,6 +15,9 @@ import (
 	"myapp/internal/routes/v1/productstocktrack"
 	"myapp/internal/routes/v1/productunit"
 	"myapp/internal/routes/v1/productunittrack"
+	"myapp/internal/routes/v1/purchaseorder"
+	"myapp/internal/routes/v1/purchaseorderitem"
+	"myapp/internal/routes/v1/reseller"
 	"myapp/internal/routes/v1/role"
 	"myapp/internal/routes/v1/s3test"
 	"myapp/internal/routes/v1/user"
@@ -45,6 +48,13 @@ func SetupV1Routes(app *fiber.App) {
 	productstocktrack.ProductStockTrackRoutes(v1)
 	productitem.ProductItemRoutes(v1)
 	productitemtrack.ProductItemTrackRoutes(v1)
+
+	// Purchase Order routes
+	purchaseorder.RegisterPurchaseOrderRoutes(v1)
+	purchaseorderitem.RegisterPurchaseOrderItemRoutes(v1)
+
+	// Reseller routes
+	reseller.RegisterResellerRoutes(v1)
 
 	// Inventory routes
 	inventory.SetupInventoryRoutes(v1)
