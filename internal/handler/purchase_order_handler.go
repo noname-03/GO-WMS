@@ -2,6 +2,7 @@ package handler
 
 import (
 	"log"
+	"myapp/internal/model"
 	"myapp/internal/service"
 	"myapp/pkg/helper"
 	"strconv"
@@ -58,6 +59,26 @@ type UpdatePurchaseOrderRequest struct {
 	OrderDate   string   `json:"orderDate"`
 	Status      string   `json:"status"`
 	TotalAmount *float64 `json:"totalAmount"`
+	Description *string  `json:"description"`
+}
+
+// CreatePurchaseOrderWithItemsRequest is the request body for creating a purchase order with items
+type CreatePurchaseOrderWithItemsRequest struct {
+	PONumber    string                     `json:"poNumber" validate:"required"`
+	UserID      uint                       `json:"userId" validate:"required"`
+	OrderDate   string                     `json:"orderDate" validate:"required"`
+	Status      string                     `json:"status"` // draft, submitted, approved, received, closed
+	TotalAmount *float64                   `json:"totalAmount"`
+	Description *string                    `json:"description"`
+	Items       []PurchaseOrderItemRequest `json:"items" validate:"required"`
+}
+
+type PurchaseOrderItemRequest struct {
+	ProductID   uint     `json:"productId" validate:"required"`
+	QtyOrdered  float64  `json:"qtyOrdered" validate:"required"`
+	UnitPrice   float64  `json:"unitPrice" validate:"required"`
+	Discount    *float64 `json:"discount"`
+	TotalPrice  float64  `json:"totalPrice" validate:"required"`
 	Description *string  `json:"description"`
 }
 
@@ -182,6 +203,62 @@ func CreatePurchaseOrder(c *fiber.Ctx) error {
 
 	log.Printf("[PURCHASE_ORDER] Create purchase order successful - PO Number: %s, Created by User ID: %d", req.PONumber, userID)
 	return helper.Success(c, 201, "Purchase order created successfully", order)
+}
+
+// CreatePurchaseOrderWithItems creates a purchase order with multiple items in a transaction
+func CreatePurchaseOrderWithItems(c *fiber.Ctx) error {
+	log.Printf("[PURCHASE_ORDER] Create purchase order with items request from IP: %s", c.IP())
+
+	var req CreatePurchaseOrderWithItemsRequest
+	if err := c.BodyParser(&req); err != nil {
+		log.Printf("[PURCHASE_ORDER] Create purchase order with items failed - Invalid request body, error: %v", err)
+		return helper.Fail(c, 400, "Invalid request body", err.Error())
+	}
+
+	// Validate items array
+	if len(req.Items) == 0 {
+		log.Printf("[PURCHASE_ORDER] Create purchase order with items failed - No items provided")
+		return helper.Fail(c, 400, "At least one item is required", "Items array is empty")
+	}
+
+	// Parse order date
+	orderDate, err := time.Parse("2006-01-02", req.OrderDate)
+	if err != nil {
+		log.Printf("[PURCHASE_ORDER] Create purchase order with items failed - Invalid order_date format: %s, error: %v", req.OrderDate, err)
+		return helper.Fail(c, 400, "Invalid order_date format, use YYYY-MM-DD", err.Error())
+	}
+
+	// Get user ID from JWT token
+	userID, ok := c.Locals("user_id").(uint)
+	if !ok {
+		log.Printf("[PURCHASE_ORDER] Create purchase order with items failed - User not authenticated")
+		return helper.Fail(c, 401, "User not authenticated", "Failed to get user ID from token")
+	}
+
+	// Convert request items to model items
+	items := make([]model.PurchaseOrderItem, len(req.Items))
+	for i, item := range req.Items {
+		items[i] = model.PurchaseOrderItem{
+			ProductID:   item.ProductID,
+			QtyOrdered:  &item.QtyOrdered,
+			UnitPrice:   &item.UnitPrice,
+			Discount:    item.Discount,
+			TotalPrice:  &item.TotalPrice,
+			Description: item.Description,
+		}
+	}
+
+	log.Printf("[PURCHASE_ORDER] Creating purchase order with %d items - User ID: %d, PO Number: %s", len(items), userID, req.PONumber)
+
+	order, err := purchaseOrderService.CreatePurchaseOrderWithItems(req.PONumber, req.UserID, orderDate, req.Status, req.TotalAmount, req.Description, items, userID)
+	if err != nil {
+		log.Printf("[PURCHASE_ORDER] Create purchase order with items failed - PO Number: %s, User ID: %d, error: %v", req.PONumber, userID, err)
+		statusCode, message := handlePurchaseOrderError(err)
+		return helper.Fail(c, statusCode, message, err.Error())
+	}
+
+	log.Printf("[PURCHASE_ORDER] Create purchase order with items successful - PO Number: %s, Created by User ID: %d", req.PONumber, userID)
+	return helper.Success(c, 201, "Purchase order with items created successfully", order)
 }
 
 func UpdatePurchaseOrder(c *fiber.Ctx) error {

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"log"
+	"myapp/internal/model"
 	"myapp/internal/service"
 	"myapp/pkg/helper"
 	"strconv"
@@ -72,6 +73,27 @@ type UpdateInvoiceRequest struct {
 	Status          string  `json:"status"`
 	TotalAmount     float64 `json:"totalAmount"`
 	Description     *string `json:"description"`
+}
+
+// CreateInvoiceWithItemsRequest is the request body for creating an invoice with items
+type CreateInvoiceWithItemsRequest struct {
+	InvoiceNumber   string               `json:"invoiceNumber" validate:"required"`
+	UserID          uint                 `json:"userId" validate:"required"`
+	PurchaseOrderID *uint                `json:"purchaseOrderId"`
+	DeliveryOrderID *uint                `json:"deliveryOrderId"`
+	InvoiceDate     string               `json:"invoiceDate" validate:"required"`
+	Status          string               `json:"status"` // draft, sent, paid, closed
+	TotalAmount     float64              `json:"totalAmount" validate:"required"`
+	Description     *string              `json:"description"`
+	Items           []InvoiceItemRequest `json:"items" validate:"required"`
+}
+
+type InvoiceItemRequest struct {
+	ProductID   uint    `json:"productId" validate:"required"`
+	QtyInvoiced float64 `json:"qtyInvoiced" validate:"required"`
+	UnitPrice   float64 `json:"unitPrice" validate:"required"`
+	TotalPrice  float64 `json:"totalPrice" validate:"required"`
+	Description *string `json:"description"`
 }
 
 func GetInvoices(c *fiber.Ctx) error {
@@ -234,6 +256,73 @@ func CreateInvoice(c *fiber.Ctx) error {
 
 	log.Printf("[INVOICE] Create invoice successful - Invoice Number: %s, Created by User ID: %d", req.InvoiceNumber, userID)
 	return helper.Success(c, 201, "Invoice created successfully", invoice)
+}
+
+// CreateInvoiceWithItems creates an invoice with multiple items in a transaction
+func CreateInvoiceWithItems(c *fiber.Ctx) error {
+	log.Printf("[INVOICE] Create invoice with items request from IP: %s", c.IP())
+
+	var req CreateInvoiceWithItemsRequest
+	if err := c.BodyParser(&req); err != nil {
+		log.Printf("[INVOICE] Create invoice with items failed - Invalid request body, error: %v", err)
+		return helper.Fail(c, 400, "Invalid request body", err.Error())
+	}
+
+	// Validate items array
+	if len(req.Items) == 0 {
+		log.Printf("[INVOICE] Create invoice with items failed - No items provided")
+		return helper.Fail(c, 400, "At least one item is required", "Items array is empty")
+	}
+
+	// Parse invoice date
+	invoiceDate, err := time.Parse("2006-01-02", req.InvoiceDate)
+	if err != nil {
+		log.Printf("[INVOICE] Create invoice with items failed - Invalid invoice_date format: %s, error: %v", req.InvoiceDate, err)
+		return helper.Fail(c, 400, "Invalid invoice_date format, use YYYY-MM-DD", err.Error())
+	}
+
+	// Get user ID from JWT token
+	userID, ok := c.Locals("user_id").(uint)
+	if !ok {
+		log.Printf("[INVOICE] Create invoice with items failed - User not authenticated")
+		return helper.Fail(c, 401, "User not authenticated", "Failed to get user ID from token")
+	}
+
+	// Convert request items to model items
+	items := make([]model.InvoiceItem, len(req.Items))
+	for i, item := range req.Items {
+		items[i] = model.InvoiceItem{
+			ProductID:   item.ProductID,
+			QtyInvoiced: item.QtyInvoiced,
+			UnitPrice:   item.UnitPrice,
+			TotalPrice:  item.TotalPrice,
+			Description: item.Description,
+		}
+	}
+
+	log.Printf("[INVOICE] Creating invoice with %d items - User ID: %d, Invoice Number: %s", len(items), userID, req.InvoiceNumber)
+
+	invoice, err := invoiceService.CreateInvoiceWithItems(
+		req.InvoiceNumber,
+		req.UserID,
+		req.PurchaseOrderID,
+		req.DeliveryOrderID,
+		invoiceDate,
+		req.Status,
+		req.TotalAmount,
+		req.Description,
+		items,
+		userID,
+	)
+
+	if err != nil {
+		log.Printf("[INVOICE] Create invoice with items failed - Invoice Number: %s, User ID: %d, error: %v", req.InvoiceNumber, userID, err)
+		statusCode, message := handleInvoiceError(err)
+		return helper.Fail(c, statusCode, message, err.Error())
+	}
+
+	log.Printf("[INVOICE] Create invoice with items successful - Invoice Number: %s, Created by User ID: %d", req.InvoiceNumber, userID)
+	return helper.Success(c, 201, "Invoice with items created successfully", invoice)
 }
 
 func UpdateInvoice(c *fiber.Ctx) error {

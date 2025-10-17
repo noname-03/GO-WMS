@@ -2,6 +2,7 @@ package handler
 
 import (
 	"log"
+	"myapp/internal/model"
 	"myapp/internal/service"
 	"myapp/pkg/helper"
 	"strconv"
@@ -58,6 +59,24 @@ type UpdateDeliveryOrderRequest struct {
 	DeliveryDate    string  `json:"deliveryDate"` // YYYY-MM-DD format
 	Status          string  `json:"status"`
 	Description     *string `json:"description"`
+}
+
+// CreateDeliveryOrderWithItemsRequest is the request body for creating a delivery order with items
+type CreateDeliveryOrderWithItemsRequest struct {
+	DONumber        string                     `json:"doNumber" validate:"required"`
+	PurchaseOrderID uint                       `json:"purchaseOrderId" validate:"required"`
+	DeliveryDate    string                     `json:"deliveryDate" validate:"required"` // YYYY-MM-DD format
+	Status          string                     `json:"status"`
+	Description     *string                    `json:"description"`
+	Items           []DeliveryOrderItemRequest `json:"items" validate:"required"`
+}
+
+type DeliveryOrderItemRequest struct {
+	ProductID    uint     `json:"productId" validate:"required"`
+	QtyDelivered float64  `json:"qtyDelivered" validate:"required"`
+	ReceivedQty  *float64 `json:"receivedQty"`
+	DamagedQty   *float64 `json:"damagedQty"`
+	Description  *string  `json:"description"`
 }
 
 func GetDeliveryOrders(c *fiber.Ctx) error {
@@ -189,6 +208,68 @@ func CreateDeliveryOrder(c *fiber.Ctx) error {
 
 	log.Printf("[DELIVERY_ORDER] Create delivery order successful - DO Number: %s, Created by User ID: %d", req.DONumber, userID)
 	return helper.Success(c, 201, "Delivery order created successfully", order)
+}
+
+// CreateDeliveryOrderWithItems creates a delivery order with multiple items in a transaction
+func CreateDeliveryOrderWithItems(c *fiber.Ctx) error {
+	log.Printf("[DELIVERY_ORDER] Create delivery order with items request from IP: %s", c.IP())
+
+	var req CreateDeliveryOrderWithItemsRequest
+	if err := c.BodyParser(&req); err != nil {
+		log.Printf("[DELIVERY_ORDER] Create delivery order with items failed - Invalid request body, error: %v", err)
+		return helper.Fail(c, 400, "Invalid request body", err.Error())
+	}
+
+	// Validate items array
+	if len(req.Items) == 0 {
+		log.Printf("[DELIVERY_ORDER] Create delivery order with items failed - No items provided")
+		return helper.Fail(c, 400, "At least one item is required", "Items array is empty")
+	}
+
+	// Parse delivery date
+	deliveryDate, err := time.Parse("2006-01-02", req.DeliveryDate)
+	if err != nil {
+		log.Printf("[DELIVERY_ORDER] Create delivery order with items failed - Invalid delivery_date format: %s, error: %v", req.DeliveryDate, err)
+		return helper.Fail(c, 400, "Invalid delivery_date format, use YYYY-MM-DD", err.Error())
+	}
+
+	// Get user ID from JWT token
+	userID, ok := c.Locals("user_id").(uint)
+	if !ok {
+		log.Printf("[DELIVERY_ORDER] Create delivery order with items failed - User not authenticated")
+		return helper.Fail(c, 401, "User not authenticated", "Failed to get user ID from token")
+	}
+
+	// Convert request items to model items
+	items := make([]model.DeliveryOrderItem, len(req.Items))
+	for i, item := range req.Items {
+		items[i] = model.DeliveryOrderItem{
+			ProductID:    item.ProductID,
+			QtyDelivered: &item.QtyDelivered,
+			Description:  item.Description,
+		}
+	}
+
+	log.Printf("[DELIVERY_ORDER] Creating delivery order with %d items - User ID: %d, DO Number: %s", len(items), userID, req.DONumber)
+
+	order, err := deliveryOrderService.CreateDeliveryOrderWithItems(
+		req.DONumber,
+		req.PurchaseOrderID,
+		deliveryDate,
+		req.Status,
+		req.Description,
+		items,
+		userID,
+	)
+
+	if err != nil {
+		log.Printf("[DELIVERY_ORDER] Create delivery order with items failed - DO Number: %s, User ID: %d, error: %v", req.DONumber, userID, err)
+		statusCode, message := handleDeliveryOrderError(err)
+		return helper.Fail(c, statusCode, message, err.Error())
+	}
+
+	log.Printf("[DELIVERY_ORDER] Create delivery order with items successful - DO Number: %s, Created by User ID: %d", req.DONumber, userID)
+	return helper.Success(c, 201, "Delivery order with items created successfully", order)
 }
 
 func UpdateDeliveryOrder(c *fiber.Ctx) error {

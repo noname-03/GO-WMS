@@ -20,6 +20,7 @@ func RegisterDeliveryOrderRoutes(api fiber.Router) {
 	deliveryOrders.Get("/deleted", handler.GetDeletedDeliveryOrders)
 	deliveryOrders.Get("/:id", handler.GetDeliveryOrderByID)
 	deliveryOrders.Post("/", handler.CreateDeliveryOrder)
+	deliveryOrders.Post("/with-items", handler.CreateDeliveryOrderWithItems)
 	deliveryOrders.Put("/:id", handler.UpdateDeliveryOrder)
 	deliveryOrders.Put("/:id/restore", handler.RestoreDeliveryOrder)
 	deliveryOrders.Delete("/:id", handler.DeleteDeliveryOrder)

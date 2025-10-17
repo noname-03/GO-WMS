@@ -92,6 +92,35 @@ func (r *DeliveryOrderRepository) CreateDeliveryOrder(order *model.DeliveryOrder
 	return database.DB.Create(order).Error
 }
 
+// CreateDeliveryOrderWithItems creates a delivery order and its items in a transaction
+func (r *DeliveryOrderRepository) CreateDeliveryOrderWithItems(order *model.DeliveryOrder, items []model.DeliveryOrderItem) error {
+	tx := database.DB.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	// Create delivery order
+	if err := tx.Create(order).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Set delivery_order_id for all items
+	for i := range items {
+		items[i].DeliveryOrderID = order.ID
+	}
+
+	// Create all items
+	if len(items) > 0 {
+		if err := tx.Create(&items).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	return tx.Commit().Error
+}
+
 func (r *DeliveryOrderRepository) UpdateDeliveryOrder(id uint, updateData map[string]interface{}) error {
 	return database.DB.Model(&model.DeliveryOrder{}).Where("id = ?", id).Updates(updateData).Error
 }

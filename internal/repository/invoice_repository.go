@@ -111,6 +111,35 @@ func (r *InvoiceRepository) CreateInvoice(invoice *model.Invoice) error {
 	return database.DB.Create(invoice).Error
 }
 
+// CreateInvoiceWithItems creates an invoice and its items in a transaction
+func (r *InvoiceRepository) CreateInvoiceWithItems(invoice *model.Invoice, items []model.InvoiceItem) error {
+	tx := database.DB.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	// Create invoice
+	if err := tx.Create(invoice).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Set invoice_id for all items
+	for i := range items {
+		items[i].InvoiceID = invoice.ID
+	}
+
+	// Create all items
+	if len(items) > 0 {
+		if err := tx.Create(&items).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	return tx.Commit().Error
+}
+
 func (r *InvoiceRepository) UpdateInvoice(id uint, updateData map[string]interface{}) error {
 	return database.DB.Model(&model.Invoice{}).Where("id = ?", id).Updates(updateData).Error
 }

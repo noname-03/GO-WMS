@@ -20,6 +20,7 @@ func RegisterInvoiceRoutes(api fiber.Router) {
 	invoices.Get("/filter", handler.GetFilteredInvoices) // Query params: user_id, purchase_order_id, delivery_order_id, invoice_date_from, invoice_date_to, status
 	invoices.Get("/:id", handler.GetInvoiceByID)
 	invoices.Post("/", handler.CreateInvoice)
+	invoices.Post("/with-items", handler.CreateInvoiceWithItems)
 	invoices.Put("/:id", handler.UpdateInvoice)
 	invoices.Put("/:id/restore", handler.RestoreInvoice)
 	invoices.Delete("/:id", handler.DeleteInvoice)

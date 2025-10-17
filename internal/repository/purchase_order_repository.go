@@ -93,6 +93,35 @@ func (r *PurchaseOrderRepository) CreatePurchaseOrder(order *model.PurchaseOrder
 	return database.DB.Create(order).Error
 }
 
+// CreatePurchaseOrderWithItems creates a purchase order and its items in a transaction
+func (r *PurchaseOrderRepository) CreatePurchaseOrderWithItems(order *model.PurchaseOrder, items []model.PurchaseOrderItem) error {
+	tx := database.DB.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	// Create purchase order
+	if err := tx.Create(order).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Set purchase_order_id for all items
+	for i := range items {
+		items[i].PurchaseOrderID = order.ID
+	}
+
+	// Create all items
+	if len(items) > 0 {
+		if err := tx.Create(&items).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	return tx.Commit().Error
+}
+
 func (r *PurchaseOrderRepository) UpdatePurchaseOrder(id uint, updateData map[string]interface{}) error {
 	return database.DB.Model(&model.PurchaseOrder{}).Where("id = ?", id).Updates(updateData).Error
 }
