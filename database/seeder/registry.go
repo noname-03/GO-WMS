@@ -29,6 +29,8 @@ func GetAllSeeders() *SeederRegistry {
 	registry.Register(NewFileSeeder())              // Files - depends on other models
 	registry.Register(NewPurchaseOrderSeeder())     // Purchase orders
 	registry.Register(NewPurchaseOrderItemSeeder()) // Purchase order items
+	registry.Register(NewDeliveryOrderSeeder())     // Delivery orders - depends on purchase orders
+	registry.Register(NewDeliveryOrderItemSeeder()) // Delivery order items
 	// registry.Register(NewWarehouseSeeder())
 
 	// Future seeders:
