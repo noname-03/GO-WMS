@@ -17,6 +17,7 @@ func RegisterInvoiceRoutes(api fiber.Router) {
 	// Public invoice routes (requires authentication)
 	invoices.Get("/", handler.GetInvoices)
 	invoices.Get("/deleted", handler.GetDeletedInvoices)
+	invoices.Get("/filter", handler.GetFilteredInvoices) // Query params: user_id, purchase_order_id, delivery_order_id, invoice_date_from, invoice_date_to, status
 	invoices.Get("/:id", handler.GetInvoiceByID)
 	invoices.Post("/", handler.CreateInvoice)
 	invoices.Put("/:id", handler.UpdateInvoice)

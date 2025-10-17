@@ -22,6 +22,11 @@ func (s *DeliveryOrderService) GetAllDeliveryOrders() (interface{}, error) {
 	return s.doRepo.GetAllDeliveryOrders()
 }
 
+// GetFilteredDeliveryOrders returns delivery orders with optional filters
+func (s *DeliveryOrderService) GetFilteredDeliveryOrders(purchaseOrderID *uint, deliveryDateFrom *time.Time, deliveryDateTo *time.Time, status *string) (interface{}, error) {
+	return s.doRepo.GetFilteredDeliveryOrders(purchaseOrderID, deliveryDateFrom, deliveryDateTo, status)
+}
+
 func (s *DeliveryOrderService) GetDeliveryOrderByID(id uint) (interface{}, error) {
 	order, err := s.doRepo.GetDeliveryOrderByID(id)
 	if err != nil {

@@ -39,6 +39,37 @@ func (r *PurchaseOrderRepository) GetAllPurchaseOrders() ([]purchaseOrderWithDet
 	return orders, result.Error
 }
 
+// GetFilteredPurchaseOrders returns purchase orders with optional filters
+func (r *PurchaseOrderRepository) GetFilteredPurchaseOrders(userID *uint, orderDateFrom *time.Time, orderDateTo *time.Time, status *string) ([]purchaseOrderWithDetailsResponse, error) {
+	var orders []purchaseOrderWithDetailsResponse
+
+	query := database.DB.Table("purchase_orders po").
+		Select("po.id, po.po_number, po.user_id, u.name as user_name, po.order_date, po.status, po.total_amount, po.description, po.created_at, po.updated_at").
+		Joins("LEFT JOIN users u ON po.user_id = u.id AND u.deleted_at IS NULL").
+		Where("po.deleted_at IS NULL")
+
+	// Apply filters if provided
+	if userID != nil {
+		query = query.Where("po.user_id = ?", *userID)
+	}
+
+	if orderDateFrom != nil {
+		query = query.Where("po.order_date >= ?", *orderDateFrom)
+	}
+
+	if orderDateTo != nil {
+		query = query.Where("po.order_date <= ?", *orderDateTo)
+	}
+
+	if status != nil && *status != "" {
+		query = query.Where("po.status = ?", *status)
+	}
+
+	result := query.Order("po.created_at DESC").Find(&orders)
+
+	return orders, result.Error
+}
+
 func (r *PurchaseOrderRepository) GetPurchaseOrderByID(id uint) (purchaseOrderWithDetailsResponse, error) {
 	var order purchaseOrderWithDetailsResponse
 

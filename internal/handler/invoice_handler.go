@@ -87,6 +87,88 @@ func GetInvoices(c *fiber.Ctx) error {
 	return helper.Success(c, 200, "Success", invoices)
 }
 
+func GetFilteredInvoices(c *fiber.Ctx) error {
+	log.Printf("[INVOICE] Get filtered invoices request from IP: %s", c.IP())
+
+	// Parse query parameters
+	var userID *uint
+	var purchaseOrderID *uint
+	var deliveryOrderID *uint
+	var invoiceDateFrom *time.Time
+	var invoiceDateTo *time.Time
+	var status *string
+
+	// Parse user_id
+	if userIDStr := c.Query("user_id"); userIDStr != "" {
+		parsedUserID, err := strconv.ParseUint(userIDStr, 10, 32)
+		if err != nil {
+			log.Printf("[INVOICE] Invalid user_id parameter: %s - error: %v", userIDStr, err)
+			return helper.Fail(c, 400, "Invalid user_id parameter", err.Error())
+		}
+		userIDUint := uint(parsedUserID)
+		userID = &userIDUint
+	}
+
+	// Parse purchase_order_id
+	if poIDStr := c.Query("purchase_order_id"); poIDStr != "" {
+		parsedPOID, err := strconv.ParseUint(poIDStr, 10, 32)
+		if err != nil {
+			log.Printf("[INVOICE] Invalid purchase_order_id parameter: %s - error: %v", poIDStr, err)
+			return helper.Fail(c, 400, "Invalid purchase_order_id parameter", err.Error())
+		}
+		poIDUint := uint(parsedPOID)
+		purchaseOrderID = &poIDUint
+	}
+
+	// Parse delivery_order_id
+	if doIDStr := c.Query("delivery_order_id"); doIDStr != "" {
+		parsedDOID, err := strconv.ParseUint(doIDStr, 10, 32)
+		if err != nil {
+			log.Printf("[INVOICE] Invalid delivery_order_id parameter: %s - error: %v", doIDStr, err)
+			return helper.Fail(c, 400, "Invalid delivery_order_id parameter", err.Error())
+		}
+		doIDUint := uint(parsedDOID)
+		deliveryOrderID = &doIDUint
+	}
+
+	// Parse invoice_date_from
+	if dateFromStr := c.Query("invoice_date_from"); dateFromStr != "" {
+		parsedDate, err := time.Parse("2006-01-02", dateFromStr)
+		if err != nil {
+			log.Printf("[INVOICE] Invalid invoice_date_from parameter: %s - error: %v", dateFromStr, err)
+			return helper.Fail(c, 400, "Invalid invoice_date_from parameter, expected format: YYYY-MM-DD", err.Error())
+		}
+		invoiceDateFrom = &parsedDate
+	}
+
+	// Parse invoice_date_to
+	if dateToStr := c.Query("invoice_date_to"); dateToStr != "" {
+		parsedDate, err := time.Parse("2006-01-02", dateToStr)
+		if err != nil {
+			log.Printf("[INVOICE] Invalid invoice_date_to parameter: %s - error: %v", dateToStr, err)
+			return helper.Fail(c, 400, "Invalid invoice_date_to parameter, expected format: YYYY-MM-DD", err.Error())
+		}
+		invoiceDateTo = &parsedDate
+	}
+
+	// Parse status
+	if statusStr := c.Query("status"); statusStr != "" {
+		status = &statusStr
+	}
+
+	log.Printf("[INVOICE] Filter parameters - user_id: %v, purchase_order_id: %v, delivery_order_id: %v, invoice_date_from: %v, invoice_date_to: %v, status: %v",
+		userID, purchaseOrderID, deliveryOrderID, invoiceDateFrom, invoiceDateTo, status)
+
+	invoices, err := invoiceService.GetFilteredInvoices(userID, purchaseOrderID, deliveryOrderID, invoiceDateFrom, invoiceDateTo, status)
+	if err != nil {
+		log.Printf("[INVOICE] Get filtered invoices failed - error: %v", err)
+		return helper.Fail(c, 500, "Failed to fetch filtered invoices", err.Error())
+	}
+
+	log.Printf("[INVOICE] Get filtered invoices successful")
+	return helper.Success(c, 200, "Success", invoices)
+}
+
 func GetInvoiceByID(c *fiber.Ctx) error {
 	id := c.Params("id")
 	log.Printf("[INVOICE] Get invoice by ID request - ID: %s from IP: %s", id, c.IP())

@@ -21,6 +21,11 @@ func (s *InvoiceService) GetAllInvoices() (interface{}, error) {
 	return s.repo.GetAllInvoices()
 }
 
+// GetFilteredInvoices returns invoices with optional filters
+func (s *InvoiceService) GetFilteredInvoices(userID *uint, purchaseOrderID *uint, deliveryOrderID *uint, invoiceDateFrom *time.Time, invoiceDateTo *time.Time, status *string) (interface{}, error) {
+	return s.repo.GetFilteredInvoices(userID, purchaseOrderID, deliveryOrderID, invoiceDateFrom, invoiceDateTo, status)
+}
+
 func (s *InvoiceService) GetInvoiceByID(id uint) (interface{}, error) {
 	invoice, err := s.repo.GetInvoiceByID(id)
 	if err != nil {

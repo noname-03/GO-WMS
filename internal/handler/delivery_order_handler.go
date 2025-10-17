@@ -73,6 +73,60 @@ func GetDeliveryOrders(c *fiber.Ctx) error {
 	return helper.Success(c, 200, "Success", orders)
 }
 
+// GetFilteredDeliveryOrders returns delivery orders with optional query parameters
+// Query params: purchase_order_id, delivery_date_from, delivery_date_to, status
+func GetFilteredDeliveryOrders(c *fiber.Ctx) error {
+	log.Printf("[DELIVERY_ORDER] Get filtered delivery orders request from IP: %s", c.IP())
+
+	// Parse query parameters
+	var purchaseOrderID *uint
+	if poIDStr := c.Query("purchase_order_id"); poIDStr != "" {
+		id, err := strconv.ParseUint(poIDStr, 10, 32)
+		if err != nil {
+			log.Printf("[DELIVERY_ORDER] Invalid purchase_order_id parameter: %s", poIDStr)
+			return helper.Fail(c, 400, "Invalid purchase_order_id parameter", err.Error())
+		}
+		poid := uint(id)
+		purchaseOrderID = &poid
+	}
+
+	var deliveryDateFrom *time.Time
+	if dateStr := c.Query("delivery_date_from"); dateStr != "" {
+		date, err := time.Parse("2006-01-02", dateStr)
+		if err != nil {
+			log.Printf("[DELIVERY_ORDER] Invalid delivery_date_from parameter: %s", dateStr)
+			return helper.Fail(c, 400, "Invalid delivery_date_from format, use YYYY-MM-DD", err.Error())
+		}
+		deliveryDateFrom = &date
+	}
+
+	var deliveryDateTo *time.Time
+	if dateStr := c.Query("delivery_date_to"); dateStr != "" {
+		date, err := time.Parse("2006-01-02", dateStr)
+		if err != nil {
+			log.Printf("[DELIVERY_ORDER] Invalid delivery_date_to parameter: %s", dateStr)
+			return helper.Fail(c, 400, "Invalid delivery_date_to format, use YYYY-MM-DD", err.Error())
+		}
+		deliveryDateTo = &date
+	}
+
+	var status *string
+	if statusStr := c.Query("status"); statusStr != "" {
+		status = &statusStr
+	}
+
+	log.Printf("[DELIVERY_ORDER] Filtering with - PurchaseOrderID: %v, DateFrom: %v, DateTo: %v, Status: %v", purchaseOrderID, deliveryDateFrom, deliveryDateTo, status)
+
+	orders, err := deliveryOrderService.GetFilteredDeliveryOrders(purchaseOrderID, deliveryDateFrom, deliveryDateTo, status)
+	if err != nil {
+		log.Printf("[DELIVERY_ORDER] Get filtered delivery orders failed - error: %v", err)
+		return helper.Fail(c, 500, "Failed to fetch filtered delivery orders", err.Error())
+	}
+
+	log.Printf("[DELIVERY_ORDER] Get filtered delivery orders successful")
+	return helper.Success(c, 200, "Success", orders)
+}
+
 func GetDeliveryOrderByID(c *fiber.Ctx) error {
 	id := c.Params("id")
 	log.Printf("[DELIVERY_ORDER] Get delivery order by ID request - ID: %s from IP: %s", id, c.IP())

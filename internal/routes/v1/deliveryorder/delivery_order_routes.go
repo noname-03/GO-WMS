@@ -16,6 +16,7 @@ func RegisterDeliveryOrderRoutes(api fiber.Router) {
 
 	// Public delivery order routes (requires authentication)
 	deliveryOrders.Get("/", handler.GetDeliveryOrders)
+	deliveryOrders.Get("/filter", handler.GetFilteredDeliveryOrders)
 	deliveryOrders.Get("/deleted", handler.GetDeletedDeliveryOrders)
 	deliveryOrders.Get("/:id", handler.GetDeliveryOrderByID)
 	deliveryOrders.Post("/", handler.CreateDeliveryOrder)

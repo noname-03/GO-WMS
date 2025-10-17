@@ -38,6 +38,37 @@ func (r *DeliveryOrderRepository) GetAllDeliveryOrders() ([]deliveryOrderWithDet
 	return orders, result.Error
 }
 
+// GetFilteredDeliveryOrders returns delivery orders with optional filters
+func (r *DeliveryOrderRepository) GetFilteredDeliveryOrders(purchaseOrderID *uint, deliveryDateFrom *time.Time, deliveryDateTo *time.Time, status *string) ([]deliveryOrderWithDetailsResponse, error) {
+	var orders []deliveryOrderWithDetailsResponse
+
+	query := database.DB.Table("delivery_orders dord").
+		Select("dord.id, dord.do_number, dord.purchase_order_id, po.po_number, dord.delivery_date, dord.status, dord.description, dord.created_at, dord.updated_at").
+		Joins("LEFT JOIN purchase_orders po ON dord.purchase_order_id = po.id AND po.deleted_at IS NULL").
+		Where("dord.deleted_at IS NULL")
+
+	// Apply filters if provided
+	if purchaseOrderID != nil {
+		query = query.Where("dord.purchase_order_id = ?", *purchaseOrderID)
+	}
+
+	if deliveryDateFrom != nil {
+		query = query.Where("dord.delivery_date >= ?", *deliveryDateFrom)
+	}
+
+	if deliveryDateTo != nil {
+		query = query.Where("dord.delivery_date <= ?", *deliveryDateTo)
+	}
+
+	if status != nil && *status != "" {
+		query = query.Where("dord.status = ?", *status)
+	}
+
+	result := query.Order("dord.created_at DESC").Find(&orders)
+
+	return orders, result.Error
+}
+
 func (r *DeliveryOrderRepository) GetDeliveryOrderByID(id uint) (deliveryOrderWithDetailsResponse, error) {
 	var order deliveryOrderWithDetailsResponse
 

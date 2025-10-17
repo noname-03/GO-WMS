@@ -74,6 +74,60 @@ func GetPurchaseOrders(c *fiber.Ctx) error {
 	return helper.Success(c, 200, "Success", orders)
 }
 
+// GetFilteredPurchaseOrders returns purchase orders with optional query parameters
+// Query params: user_id, order_date_from, order_date_to, status
+func GetFilteredPurchaseOrders(c *fiber.Ctx) error {
+	log.Printf("[PURCHASE_ORDER] Get filtered purchase orders request from IP: %s", c.IP())
+
+	// Parse query parameters
+	var userID *uint
+	if userIDStr := c.Query("user_id"); userIDStr != "" {
+		id, err := strconv.ParseUint(userIDStr, 10, 32)
+		if err != nil {
+			log.Printf("[PURCHASE_ORDER] Invalid user_id parameter: %s", userIDStr)
+			return helper.Fail(c, 400, "Invalid user_id parameter", err.Error())
+		}
+		uid := uint(id)
+		userID = &uid
+	}
+
+	var orderDateFrom *time.Time
+	if dateStr := c.Query("order_date_from"); dateStr != "" {
+		date, err := time.Parse("2006-01-02", dateStr)
+		if err != nil {
+			log.Printf("[PURCHASE_ORDER] Invalid order_date_from parameter: %s", dateStr)
+			return helper.Fail(c, 400, "Invalid order_date_from format, use YYYY-MM-DD", err.Error())
+		}
+		orderDateFrom = &date
+	}
+
+	var orderDateTo *time.Time
+	if dateStr := c.Query("order_date_to"); dateStr != "" {
+		date, err := time.Parse("2006-01-02", dateStr)
+		if err != nil {
+			log.Printf("[PURCHASE_ORDER] Invalid order_date_to parameter: %s", dateStr)
+			return helper.Fail(c, 400, "Invalid order_date_to format, use YYYY-MM-DD", err.Error())
+		}
+		orderDateTo = &date
+	}
+
+	var status *string
+	if statusStr := c.Query("status"); statusStr != "" {
+		status = &statusStr
+	}
+
+	log.Printf("[PURCHASE_ORDER] Filtering with - UserID: %v, DateFrom: %v, DateTo: %v, Status: %v", userID, orderDateFrom, orderDateTo, status)
+
+	orders, err := purchaseOrderService.GetFilteredPurchaseOrders(userID, orderDateFrom, orderDateTo, status)
+	if err != nil {
+		log.Printf("[PURCHASE_ORDER] Get filtered purchase orders failed - error: %v", err)
+		return helper.Fail(c, 500, "Failed to fetch filtered purchase orders", err.Error())
+	}
+
+	log.Printf("[PURCHASE_ORDER] Get filtered purchase orders successful")
+	return helper.Success(c, 200, "Success", orders)
+}
+
 func GetPurchaseOrderByID(c *fiber.Ctx) error {
 	id := c.Params("id")
 	log.Printf("[PURCHASE_ORDER] Get purchase order by ID request - ID: %s from IP: %s", id, c.IP())

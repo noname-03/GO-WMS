@@ -45,6 +45,47 @@ func (r *InvoiceRepository) GetAllInvoices() ([]invoiceWithDetailsResponse, erro
 	return invoices, result.Error
 }
 
+// GetFilteredInvoices returns invoices with optional filters
+func (r *InvoiceRepository) GetFilteredInvoices(userID *uint, purchaseOrderID *uint, deliveryOrderID *uint, invoiceDateFrom *time.Time, invoiceDateTo *time.Time, status *string) ([]invoiceWithDetailsResponse, error) {
+	var invoices []invoiceWithDetailsResponse
+
+	query := database.DB.Table("invoices inv").
+		Select("inv.id, inv.invoice_number, inv.user_id, u.name as user_name, inv.purchase_order_id, po.po_number, inv.delivery_order_id, dord.do_number, inv.invoice_date, inv.status, inv.total_amount, inv.description, inv.created_at, inv.updated_at").
+		Joins("LEFT JOIN users u ON inv.user_id = u.id AND u.deleted_at IS NULL").
+		Joins("LEFT JOIN purchase_orders po ON inv.purchase_order_id = po.id AND po.deleted_at IS NULL").
+		Joins("LEFT JOIN delivery_orders dord ON inv.delivery_order_id = dord.id AND dord.deleted_at IS NULL").
+		Where("inv.deleted_at IS NULL")
+
+	// Apply filters if provided
+	if userID != nil {
+		query = query.Where("inv.user_id = ?", *userID)
+	}
+
+	if purchaseOrderID != nil {
+		query = query.Where("inv.purchase_order_id = ?", *purchaseOrderID)
+	}
+
+	if deliveryOrderID != nil {
+		query = query.Where("inv.delivery_order_id = ?", *deliveryOrderID)
+	}
+
+	if invoiceDateFrom != nil {
+		query = query.Where("inv.invoice_date >= ?", *invoiceDateFrom)
+	}
+
+	if invoiceDateTo != nil {
+		query = query.Where("inv.invoice_date <= ?", *invoiceDateTo)
+	}
+
+	if status != nil && *status != "" {
+		query = query.Where("inv.status = ?", *status)
+	}
+
+	result := query.Order("inv.created_at DESC").Find(&invoices)
+
+	return invoices, result.Error
+}
+
 func (r *InvoiceRepository) GetInvoiceByID(id uint) (invoiceWithDetailsResponse, error) {
 	var invoice invoiceWithDetailsResponse
 

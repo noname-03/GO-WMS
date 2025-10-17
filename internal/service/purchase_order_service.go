@@ -22,6 +22,11 @@ func (s *PurchaseOrderService) GetAllPurchaseOrders() (interface{}, error) {
 	return s.poRepo.GetAllPurchaseOrders()
 }
 
+// GetFilteredPurchaseOrders returns purchase orders with optional filters
+func (s *PurchaseOrderService) GetFilteredPurchaseOrders(userID *uint, orderDateFrom *time.Time, orderDateTo *time.Time, status *string) (interface{}, error) {
+	return s.poRepo.GetFilteredPurchaseOrders(userID, orderDateFrom, orderDateTo, status)
+}
+
 func (s *PurchaseOrderService) GetPurchaseOrderByID(id uint) (interface{}, error) {
 	order, err := s.poRepo.GetPurchaseOrderByID(id)
 	if err != nil {

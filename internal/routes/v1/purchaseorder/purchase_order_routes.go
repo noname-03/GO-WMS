@@ -15,6 +15,7 @@ func RegisterPurchaseOrderRoutes(app fiber.Router) {
 
 	// CRUD operations for purchase orders
 	purchaseOrderRoutes.Get("/", handler.GetPurchaseOrders)               // GET /api/v1/purchase-orders
+	purchaseOrderRoutes.Get("/filter", handler.GetFilteredPurchaseOrders) // GET /api/v1/purchase-orders/filter?user_id=&order_date_from=&order_date_to=&status=
 	purchaseOrderRoutes.Get("/deleted", handler.GetDeletedPurchaseOrders) // GET /api/v1/purchase-orders/deleted
 	purchaseOrderRoutes.Get("/:id", handler.GetPurchaseOrderByID)         // GET /api/v1/purchase-orders/:id
 	purchaseOrderRoutes.Post("/", handler.CreatePurchaseOrder)            // POST /api/v1/purchase-orders
