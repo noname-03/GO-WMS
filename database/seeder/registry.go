@@ -31,6 +31,8 @@ func GetAllSeeders() *SeederRegistry {
 	registry.Register(NewPurchaseOrderItemSeeder()) // Purchase order items
 	registry.Register(NewDeliveryOrderSeeder())     // Delivery orders - depends on purchase orders
 	registry.Register(NewDeliveryOrderItemSeeder()) // Delivery order items
+	registry.Register(NewInvoiceSeeder())           // Invoices - depends on purchase orders & delivery orders
+	registry.Register(NewInvoiceItemSeeder())       // Invoice items
 	// registry.Register(NewWarehouseSeeder())
 
 	// Future seeders:

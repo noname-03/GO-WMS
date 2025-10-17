@@ -28,6 +28,8 @@ func Migrate() error {
 		&model.PurchaseOrderItem{},
 		&model.DeliveryOrder{},
 		&model.DeliveryOrderItem{},
+		&model.Invoice{},
+		&model.InvoiceItem{},
 	)
 	if err != nil {
 		log.Println("Migration failed:", err)

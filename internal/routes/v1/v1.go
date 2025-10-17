@@ -8,6 +8,8 @@ import (
 	"myapp/internal/routes/v1/deliveryorderitem"
 	"myapp/internal/routes/v1/file"
 	"myapp/internal/routes/v1/inventory"
+	"myapp/internal/routes/v1/invoice"
+	"myapp/internal/routes/v1/invoiceitem"
 	"myapp/internal/routes/v1/location"
 	"myapp/internal/routes/v1/product"
 	"myapp/internal/routes/v1/productbatch"
@@ -58,6 +60,10 @@ func SetupV1Routes(app *fiber.App) {
 	// Delivery Order routes
 	deliveryorder.RegisterDeliveryOrderRoutes(v1)
 	deliveryorderitem.RegisterDeliveryOrderItemRoutes(v1)
+
+	// Invoice routes
+	invoice.RegisterInvoiceRoutes(v1)
+	invoiceitem.RegisterInvoiceItemRoutes(v1)
 
 	// Reseller routes
 	reseller.RegisterResellerRoutes(v1)
