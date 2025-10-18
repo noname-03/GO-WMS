@@ -166,6 +166,27 @@ func GetDeliveryOrderByID(c *fiber.Ctx) error {
 	return helper.Success(c, 200, "Success", order)
 }
 
+// GetDeliveryOrderWithItems returns delivery order with all its items
+func GetDeliveryOrderWithItems(c *fiber.Ctx) error {
+	id := c.Params("id")
+	log.Printf("[DELIVERY_ORDER] Get delivery order with items request - ID: %s from IP: %s", id, c.IP())
+
+	idUint, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		log.Printf("[DELIVERY_ORDER] Get delivery order with items failed - Invalid ID: %s, error: %v", id, err)
+		return helper.Fail(c, 400, "Invalid delivery order ID", err.Error())
+	}
+
+	order, err := deliveryOrderService.GetDeliveryOrderWithItems(uint(idUint))
+	if err != nil {
+		log.Printf("[DELIVERY_ORDER] Get delivery order with items failed - Order ID: %d not found, error: %v", idUint, err)
+		return helper.Fail(c, 404, "Delivery order not found", err.Error())
+	}
+
+	log.Printf("[DELIVERY_ORDER] Get delivery order with items successful - Order ID: %d", idUint)
+	return helper.Success(c, 200, "Success", order)
+}
+
 func CreateDeliveryOrder(c *fiber.Ctx) error {
 	log.Printf("[DELIVERY_ORDER] Create delivery order request from IP: %s", c.IP())
 

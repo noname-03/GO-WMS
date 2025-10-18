@@ -169,6 +169,27 @@ func GetPurchaseOrderByID(c *fiber.Ctx) error {
 	return helper.Success(c, 200, "Success", order)
 }
 
+// GetPurchaseOrderWithItems returns purchase order with all its items
+func GetPurchaseOrderWithItems(c *fiber.Ctx) error {
+	id := c.Params("id")
+	log.Printf("[PURCHASE_ORDER] Get purchase order with items request - ID: %s from IP: %s", id, c.IP())
+
+	idUint, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		log.Printf("[PURCHASE_ORDER] Get purchase order with items failed - Invalid ID: %s, error: %v", id, err)
+		return helper.Fail(c, 400, "Invalid purchase order ID", err.Error())
+	}
+
+	order, err := purchaseOrderService.GetPurchaseOrderWithItems(uint(idUint))
+	if err != nil {
+		log.Printf("[PURCHASE_ORDER] Get purchase order with items failed - Order ID: %d not found, error: %v", idUint, err)
+		return helper.Fail(c, 404, "Purchase order not found", err.Error())
+	}
+
+	log.Printf("[PURCHASE_ORDER] Get purchase order with items successful - Order ID: %d", idUint)
+	return helper.Success(c, 200, "Success", order)
+}
+
 func CreatePurchaseOrder(c *fiber.Ctx) error {
 	log.Printf("[PURCHASE_ORDER] Create purchase order request from IP: %s", c.IP())
 

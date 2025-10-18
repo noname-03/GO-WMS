@@ -211,6 +211,27 @@ func GetInvoiceByID(c *fiber.Ctx) error {
 	return helper.Success(c, 200, "Success", invoice)
 }
 
+// GetInvoiceWithItems returns invoice with all its items
+func GetInvoiceWithItems(c *fiber.Ctx) error {
+	id := c.Params("id")
+	log.Printf("[INVOICE] Get invoice with items request - ID: %s from IP: %s", id, c.IP())
+
+	idUint, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		log.Printf("[INVOICE] Get invoice with items failed - Invalid ID: %s, error: %v", id, err)
+		return helper.Fail(c, 400, "Invalid invoice ID", err.Error())
+	}
+
+	invoice, err := invoiceService.GetInvoiceWithItems(uint(idUint))
+	if err != nil {
+		log.Printf("[INVOICE] Get invoice with items failed - Invoice ID: %d not found, error: %v", idUint, err)
+		return helper.Fail(c, 404, "Invoice not found", err.Error())
+	}
+
+	log.Printf("[INVOICE] Get invoice with items successful - Invoice ID: %d", idUint)
+	return helper.Success(c, 200, "Success", invoice)
+}
+
 func CreateInvoice(c *fiber.Ctx) error {
 	log.Printf("[INVOICE] Create invoice request from IP: %s", c.IP())
 

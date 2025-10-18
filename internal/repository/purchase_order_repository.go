@@ -89,6 +89,64 @@ func (r *PurchaseOrderRepository) GetPurchaseOrderModelByID(id uint) (model.Purc
 	return order, result.Error
 }
 
+// purchaseOrderWithItemsResponse struct untuk response dengan items
+type purchaseOrderWithItemsResponse struct {
+	ID          uint                                `json:"id"`
+	PONumber    string                              `json:"poNumber"`
+	UserID      uint                                `json:"userId"`
+	UserName    string                              `json:"userName"`
+	OrderDate   time.Time                           `json:"orderDate"`
+	Status      string                              `json:"status"`
+	TotalAmount *float64                            `json:"totalAmount"`
+	Description *string                             `json:"description"`
+	CreatedAt   time.Time                           `json:"createdAt"`
+	UpdatedAt   time.Time                           `json:"updatedAt"`
+	Items       []poItemDetailsForWithItemsResponse `gorm:"-" json:"items"`
+}
+
+type poItemDetailsForWithItemsResponse struct {
+	ID          uint     `json:"id"`
+	ProductID   uint     `json:"productId"`
+	ProductName string   `json:"productName"`
+	QtyOrdered  *float64 `json:"qtyOrdered"`
+	UnitPrice   *float64 `json:"unitPrice"`
+	Discount    *float64 `json:"discount"`
+	TotalPrice  *float64 `json:"totalPrice"`
+	Description *string  `json:"description"`
+}
+
+// GetPurchaseOrderWithItems returns purchase order with all its items
+func (r *PurchaseOrderRepository) GetPurchaseOrderWithItems(id uint) (purchaseOrderWithItemsResponse, error) {
+	var order purchaseOrderWithItemsResponse
+
+	// Get purchase order
+	result := database.DB.Table("purchase_orders po").
+		Select("po.id, po.po_number, po.user_id, u.name as user_name, po.order_date, po.status, po.total_amount, po.description, po.created_at, po.updated_at").
+		Joins("INNER JOIN users u ON po.user_id = u.id AND u.deleted_at IS NULL").
+		Where("po.id = ? AND po.deleted_at IS NULL", id).
+		First(&order)
+
+	if result.Error != nil {
+		return order, result.Error
+	}
+
+	// Get items
+	var items []poItemDetailsForWithItemsResponse
+	result = database.DB.Table("purchase_order_items poi").
+		Select("poi.id, poi.product_id, p.name as product_name, poi.qty_ordered, poi.unit_price, poi.discount, poi.total_price, poi.description").
+		Joins("INNER JOIN products p ON poi.product_id = p.id AND p.deleted_at IS NULL").
+		Where("poi.purchase_order_id = ? AND poi.deleted_at IS NULL", id).
+		Order("poi.id ASC").
+		Find(&items)
+
+	if result.Error != nil {
+		return order, result.Error
+	}
+
+	order.Items = items
+	return order, nil
+}
+
 func (r *PurchaseOrderRepository) CreatePurchaseOrder(order *model.PurchaseOrder) error {
 	return database.DB.Create(order).Error
 }

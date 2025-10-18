@@ -18,6 +18,7 @@ func RegisterDeliveryOrderRoutes(api fiber.Router) {
 	deliveryOrders.Get("/", handler.GetDeliveryOrders)
 	deliveryOrders.Get("/filter", handler.GetFilteredDeliveryOrders)
 	deliveryOrders.Get("/deleted", handler.GetDeletedDeliveryOrders)
+	deliveryOrders.Get("/:id/with-items", handler.GetDeliveryOrderWithItems)
 	deliveryOrders.Get("/:id", handler.GetDeliveryOrderByID)
 	deliveryOrders.Post("/", handler.CreateDeliveryOrder)
 	deliveryOrders.Post("/with-items", handler.CreateDeliveryOrderWithItems)

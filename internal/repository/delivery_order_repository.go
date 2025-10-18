@@ -88,6 +88,60 @@ func (r *DeliveryOrderRepository) GetDeliveryOrderModelByID(id uint) (model.Deli
 	return order, result.Error
 }
 
+// deliveryOrderWithItemsResponse struct untuk response dengan items
+type deliveryOrderWithItemsResponse struct {
+	ID              uint                                `json:"id"`
+	DONumber        string                              `json:"doNumber"`
+	PurchaseOrderID uint                                `json:"purchaseOrderId"`
+	PONumber        string                              `json:"poNumber"`
+	DeliveryDate    time.Time                           `json:"deliveryDate"`
+	Status          string                              `json:"status"`
+	Description     *string                             `json:"description"`
+	CreatedAt       time.Time                           `json:"createdAt"`
+	UpdatedAt       time.Time                           `json:"updatedAt"`
+	Items           []doItemDetailsForWithItemsResponse `gorm:"-" json:"items"`
+}
+
+type doItemDetailsForWithItemsResponse struct {
+	ID           uint     `json:"id"`
+	ProductID    uint     `json:"productId"`
+	ProductName  string   `json:"productName"`
+	QtyDelivered *float64 `json:"qtyDelivered"`
+	Description  *string  `json:"description"`
+}
+
+// GetDeliveryOrderWithItems returns delivery order with all its items
+func (r *DeliveryOrderRepository) GetDeliveryOrderWithItems(id uint) (deliveryOrderWithItemsResponse, error) {
+	var order deliveryOrderWithItemsResponse
+
+	// Get delivery order
+	result := database.DB.Table("delivery_orders dord").
+		Select("dord.id, dord.do_number, dord.purchase_order_id, po.po_number, dord.delivery_date, dord.status, dord.description, dord.created_at, dord.updated_at").
+		Joins("INNER JOIN purchase_orders po ON dord.purchase_order_id = po.id AND po.deleted_at IS NULL").
+		Where("dord.id = ? AND dord.deleted_at IS NULL", id).
+		First(&order)
+
+	if result.Error != nil {
+		return order, result.Error
+	}
+
+	// Get items
+	var items []doItemDetailsForWithItemsResponse
+	result = database.DB.Table("delivery_order_items doi").
+		Select("doi.id, doi.product_id, p.name as product_name, doi.qty_delivered, doi.description").
+		Joins("INNER JOIN products p ON doi.product_id = p.id AND p.deleted_at IS NULL").
+		Where("doi.delivery_order_id = ? AND doi.deleted_at IS NULL", id).
+		Order("doi.id ASC").
+		Find(&items)
+
+	if result.Error != nil {
+		return order, result.Error
+	}
+
+	order.Items = items
+	return order, nil
+}
+
 func (r *DeliveryOrderRepository) CreateDeliveryOrder(order *model.DeliveryOrder) error {
 	return database.DB.Create(order).Error
 }

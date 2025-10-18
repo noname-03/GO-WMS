@@ -35,6 +35,15 @@ func (s *PurchaseOrderService) GetPurchaseOrderByID(id uint) (interface{}, error
 	return order, nil
 }
 
+// GetPurchaseOrderWithItems returns purchase order with all its items
+func (s *PurchaseOrderService) GetPurchaseOrderWithItems(id uint) (interface{}, error) {
+	order, err := s.poRepo.GetPurchaseOrderWithItems(id)
+	if err != nil {
+		return nil, err
+	}
+	return order, nil
+}
+
 func (s *PurchaseOrderService) CreatePurchaseOrder(poNumber string, orderUserID uint, orderDate time.Time, status string, totalAmount *float64, description *string, userID uint) (interface{}, error) {
 	if poNumber == "" {
 		return nil, errors.New("PO number is required")

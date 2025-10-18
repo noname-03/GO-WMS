@@ -34,6 +34,15 @@ func (s *InvoiceService) GetInvoiceByID(id uint) (interface{}, error) {
 	return invoice, nil
 }
 
+// GetInvoiceWithItems returns invoice with all its items
+func (s *InvoiceService) GetInvoiceWithItems(id uint) (interface{}, error) {
+	invoice, err := s.repo.GetInvoiceWithItems(id)
+	if err != nil {
+		return nil, errors.New("invoice not found")
+	}
+	return invoice, nil
+}
+
 func (s *InvoiceService) CreateInvoice(
 	invoiceNumber string,
 	userID uint,

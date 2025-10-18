@@ -35,6 +35,15 @@ func (s *DeliveryOrderService) GetDeliveryOrderByID(id uint) (interface{}, error
 	return order, nil
 }
 
+// GetDeliveryOrderWithItems returns delivery order with all its items
+func (s *DeliveryOrderService) GetDeliveryOrderWithItems(id uint) (interface{}, error) {
+	order, err := s.doRepo.GetDeliveryOrderWithItems(id)
+	if err != nil {
+		return nil, err
+	}
+	return order, nil
+}
+
 func (s *DeliveryOrderService) CreateDeliveryOrder(doNumber string, purchaseOrderID uint, deliveryDate time.Time, status string, description *string, userID uint) (interface{}, error) {
 	if doNumber == "" {
 		return nil, errors.New("DO number is required")

@@ -17,6 +17,7 @@ func RegisterPurchaseOrderRoutes(app fiber.Router) {
 	purchaseOrderRoutes.Get("/", handler.GetPurchaseOrders)                       // GET /api/v1/purchase-orders
 	purchaseOrderRoutes.Get("/filter", handler.GetFilteredPurchaseOrders)         // GET /api/v1/purchase-orders/filter?user_id=&order_date_from=&order_date_to=&status=
 	purchaseOrderRoutes.Get("/deleted", handler.GetDeletedPurchaseOrders)         // GET /api/v1/purchase-orders/deleted
+	purchaseOrderRoutes.Get("/:id/with-items", handler.GetPurchaseOrderWithItems) // GET /api/v1/purchase-orders/:id/with-items
 	purchaseOrderRoutes.Get("/:id", handler.GetPurchaseOrderByID)                 // GET /api/v1/purchase-orders/:id
 	purchaseOrderRoutes.Post("/", handler.CreatePurchaseOrder)                    // POST /api/v1/purchase-orders
 	purchaseOrderRoutes.Post("/with-items", handler.CreatePurchaseOrderWithItems) // POST /api/v1/purchase-orders/with-items

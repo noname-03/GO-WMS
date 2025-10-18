@@ -107,6 +107,69 @@ func (r *InvoiceRepository) GetInvoiceModelByID(id uint) (model.Invoice, error) 
 	return invoice, result.Error
 }
 
+// invoiceWithItemsResponse struct untuk response dengan items
+type invoiceWithItemsResponse struct {
+	ID              uint                                 `json:"id"`
+	InvoiceNumber   string                               `json:"invoiceNumber"`
+	UserID          uint                                 `json:"userId"`
+	UserName        string                               `json:"userName"`
+	PurchaseOrderID *uint                                `json:"purchaseOrderId"`
+	PONumber        *string                              `json:"poNumber"`
+	DeliveryOrderID *uint                                `json:"deliveryOrderId"`
+	DONumber        *string                              `json:"doNumber"`
+	InvoiceDate     time.Time                            `json:"invoiceDate"`
+	Status          string                               `json:"status"`
+	TotalAmount     float64                              `json:"totalAmount"`
+	Description     *string                              `json:"description"`
+	CreatedAt       time.Time                            `json:"createdAt"`
+	UpdatedAt       time.Time                            `json:"updatedAt"`
+	Items           []invItemDetailsForWithItemsResponse `gorm:"-" json:"items"`
+}
+
+type invItemDetailsForWithItemsResponse struct {
+	ID          uint    `json:"id"`
+	ProductID   uint    `json:"productId"`
+	ProductName string  `json:"productName"`
+	QtyInvoiced float64 `json:"qtyInvoiced"`
+	UnitPrice   float64 `json:"unitPrice"`
+	TotalPrice  float64 `json:"totalPrice"`
+	Description *string `json:"description"`
+}
+
+// GetInvoiceWithItems returns invoice with all its items
+func (r *InvoiceRepository) GetInvoiceWithItems(id uint) (invoiceWithItemsResponse, error) {
+	var invoice invoiceWithItemsResponse
+
+	// Get invoice
+	result := database.DB.Table("invoices inv").
+		Select("inv.id, inv.invoice_number, inv.user_id, u.name as user_name, inv.purchase_order_id, po.po_number, inv.delivery_order_id, dord.do_number, inv.invoice_date, inv.status, inv.total_amount, inv.description, inv.created_at, inv.updated_at").
+		Joins("INNER JOIN users u ON inv.user_id = u.id AND u.deleted_at IS NULL").
+		Joins("LEFT JOIN purchase_orders po ON inv.purchase_order_id = po.id AND po.deleted_at IS NULL").
+		Joins("LEFT JOIN delivery_orders dord ON inv.delivery_order_id = dord.id AND dord.deleted_at IS NULL").
+		Where("inv.id = ? AND inv.deleted_at IS NULL", id).
+		First(&invoice)
+
+	if result.Error != nil {
+		return invoice, result.Error
+	}
+
+	// Get items
+	var items []invItemDetailsForWithItemsResponse
+	result = database.DB.Table("invoice_items ii").
+		Select("ii.id, ii.product_id, p.name as product_name, ii.qty_invoiced, ii.unit_price, ii.total_price, ii.description").
+		Joins("INNER JOIN products p ON ii.product_id = p.id AND p.deleted_at IS NULL").
+		Where("ii.invoice_id = ? AND ii.deleted_at IS NULL", id).
+		Order("ii.id ASC").
+		Find(&items)
+
+	if result.Error != nil {
+		return invoice, result.Error
+	}
+
+	invoice.Items = items
+	return invoice, nil
+}
+
 func (r *InvoiceRepository) CreateInvoice(invoice *model.Invoice) error {
 	return database.DB.Create(invoice).Error
 }
