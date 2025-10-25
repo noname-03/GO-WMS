@@ -203,6 +203,41 @@ func (r *InvoiceRepository) CreateInvoiceWithItems(invoice *model.Invoice, items
 	return tx.Commit().Error
 }
 
+// UpdateInvoiceWithItems updates an invoice and replaces all its items in a transaction
+func (r *InvoiceRepository) UpdateInvoiceWithItems(id uint, invoice map[string]interface{}, items []model.InvoiceItem) error {
+	tx := database.DB.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	// Update invoice
+	if err := tx.Model(&model.Invoice{}).Where("id = ?", id).Updates(invoice).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Delete existing items (soft delete)
+	if err := tx.Where("invoice_id = ?", id).Delete(&model.InvoiceItem{}).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Set invoice_id for all new items
+	for i := range items {
+		items[i].InvoiceID = id
+	}
+
+	// Create new items
+	if len(items) > 0 {
+		if err := tx.Create(&items).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	return tx.Commit().Error
+}
+
 func (r *InvoiceRepository) UpdateInvoice(id uint, updateData map[string]interface{}) error {
 	return database.DB.Model(&model.Invoice{}).Where("id = ?", id).Updates(updateData).Error
 }

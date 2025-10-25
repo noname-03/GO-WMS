@@ -217,6 +217,105 @@ func (s *PurchaseOrderService) CreatePurchaseOrderWithItems(poNumber string, ord
 	return createdOrder, nil
 }
 
+// UpdatePurchaseOrderWithItems updates a purchase order and replaces all its items in a transaction
+func (s *PurchaseOrderService) UpdatePurchaseOrderWithItems(id uint, poNumber string, orderUserID uint, orderDate time.Time, status string, totalAmount *float64, description *string, items []model.PurchaseOrderItem, userID uint) (interface{}, error) {
+	if id == 0 {
+		return nil, errors.New("invalid purchase order ID")
+	}
+
+	if userID == 0 {
+		return nil, errors.New("user ID is required for audit trail")
+	}
+
+	// Check if purchase order exists
+	oldOrder, err := s.poRepo.GetPurchaseOrderModelByID(id)
+	if err != nil {
+		return nil, errors.New("purchase order not found")
+	}
+
+	// Validate status if provided
+	if status == "" {
+		status = oldOrder.Status // Use existing status if not provided
+	} else {
+		validStatuses := map[string]bool{
+			"draft":     true,
+			"submitted": true,
+			"approved":  true,
+			"received":  true,
+			"closed":    true,
+		}
+		if !validStatuses[status] {
+			return nil, errors.New("invalid status: must be one of draft, submitted, approved, received, closed")
+		}
+	}
+
+	// If user ID is being changed, check if new user exists
+	if orderUserID != 0 && orderUserID != oldOrder.UserID {
+		userExists, err := s.poRepo.CheckUserExists(orderUserID)
+		if err != nil {
+			return nil, err
+		}
+		if !userExists {
+			return nil, errors.New("user not found")
+		}
+	} else if orderUserID == 0 {
+		orderUserID = oldOrder.UserID // Use existing user if not provided
+	}
+
+	// Check PO number if changed
+	if poNumber != "" && poNumber != oldOrder.PONumber {
+		poExists, err := s.poRepo.CheckPONumberExists(poNumber)
+		if err != nil {
+			return nil, err
+		}
+		if poExists {
+			return nil, errors.New("PO number already exists")
+		}
+	} else if poNumber == "" {
+		poNumber = oldOrder.PONumber // Use existing PO number if not provided
+	}
+
+	// Validate items
+	if len(items) == 0 {
+		return nil, errors.New("at least one item is required")
+	}
+
+	// Set user_ins and user_updt for all items
+	for i := range items {
+		items[i].UserIns = &userID
+		items[i].UserUpdt = &userID
+	}
+
+	// Set default total amount if not provided
+	if totalAmount == nil {
+		totalAmount = oldOrder.TotalAmount
+	}
+
+	// Prepare update data
+	updateData := map[string]interface{}{
+		"po_number":    poNumber,
+		"user_id":      orderUserID,
+		"order_date":   orderDate,
+		"status":       status,
+		"total_amount": totalAmount,
+		"description":  description,
+		"user_updt":    userID,
+	}
+
+	err = s.poRepo.UpdatePurchaseOrderWithItems(id, updateData, items)
+	if err != nil {
+		return nil, err
+	}
+
+	// Fetch the updated order with relationships
+	updatedOrder, err := s.poRepo.GetPurchaseOrderByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return updatedOrder, nil
+}
+
 func (s *PurchaseOrderService) UpdatePurchaseOrder(id uint, poNumber string, orderUserID uint, orderDate time.Time, status string, totalAmount *float64, description *string, userID uint) (interface{}, error) {
 	if id == 0 {
 		return nil, errors.New("invalid purchase order ID")

@@ -88,6 +88,19 @@ type CreateInvoiceWithItemsRequest struct {
 	Items           []InvoiceItemRequest `json:"items" validate:"required"`
 }
 
+// UpdateInvoiceWithItemsRequest is the request body for updating an invoice with items
+type UpdateInvoiceWithItemsRequest struct {
+	InvoiceNumber   string               `json:"invoiceNumber"`
+	UserID          uint                 `json:"userId"`
+	PurchaseOrderID *uint                `json:"purchaseOrderId"`
+	DeliveryOrderID *uint                `json:"deliveryOrderId"`
+	InvoiceDate     string               `json:"invoiceDate"`
+	Status          string               `json:"status"`
+	TotalAmount     float64              `json:"totalAmount"`
+	Description     *string              `json:"description"`
+	Items           []InvoiceItemRequest `json:"items" validate:"required"`
+}
+
 type InvoiceItemRequest struct {
 	ProductID   uint    `json:"productId" validate:"required"`
 	QtyInvoiced float64 `json:"qtyInvoiced" validate:"required"`
@@ -344,6 +357,83 @@ func CreateInvoiceWithItems(c *fiber.Ctx) error {
 
 	log.Printf("[INVOICE] Create invoice with items successful - Invoice Number: %s, Created by User ID: %d", req.InvoiceNumber, userID)
 	return helper.Success(c, 201, "Invoice with items created successfully", invoice)
+}
+
+func UpdateInvoiceWithItems(c *fiber.Ctx) error {
+	id := c.Params("id")
+	log.Printf("[INVOICE] Update invoice with items request - ID: %s from IP: %s", id, c.IP())
+
+	idUint, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		log.Printf("[INVOICE] Update invoice with items failed - Invalid ID: %s, error: %v", id, err)
+		return helper.Fail(c, 400, "Invalid invoice ID", err.Error())
+	}
+
+	var req UpdateInvoiceWithItemsRequest
+	if err := c.BodyParser(&req); err != nil {
+		log.Printf("[INVOICE] Update invoice with items failed - Invalid request body for ID: %d, error: %v", idUint, err)
+		return helper.Fail(c, 400, "Invalid request body", err.Error())
+	}
+
+	// Validate items
+	if len(req.Items) == 0 {
+		log.Printf("[INVOICE] Update invoice with items failed - No items provided for Invoice ID: %d", idUint)
+		return helper.Fail(c, 400, "At least one item is required", "Items array cannot be empty")
+	}
+
+	// Parse invoice date if provided
+	var invoiceDate time.Time
+	if req.InvoiceDate != "" {
+		invoiceDate, err = time.Parse("2006-01-02", req.InvoiceDate)
+		if err != nil {
+			log.Printf("[INVOICE] Update invoice with items failed - Invalid invoice_date format: %s, error: %v", req.InvoiceDate, err)
+			return helper.Fail(c, 400, "Invalid invoice_date format, use YYYY-MM-DD", err.Error())
+		}
+	}
+
+	// Get user ID from JWT token
+	userID, ok := c.Locals("user_id").(uint)
+	if !ok {
+		log.Printf("[INVOICE] Update invoice with items failed - User not authenticated")
+		return helper.Fail(c, 401, "User not authenticated", "Failed to get user ID from token")
+	}
+
+	// Convert request items to model items
+	items := make([]model.InvoiceItem, len(req.Items))
+	for i, item := range req.Items {
+		items[i] = model.InvoiceItem{
+			ProductID:   item.ProductID,
+			QtyInvoiced: item.QtyInvoiced,
+			UnitPrice:   item.UnitPrice,
+			TotalPrice:  item.TotalPrice,
+			Description: item.Description,
+		}
+	}
+
+	log.Printf("[INVOICE] Updating invoice with %d items - Invoice ID: %d, User ID: %d", len(items), idUint, userID)
+
+	invoice, err := invoiceService.UpdateInvoiceWithItems(
+		uint(idUint),
+		req.InvoiceNumber,
+		req.UserID,
+		req.PurchaseOrderID,
+		req.DeliveryOrderID,
+		invoiceDate,
+		req.Status,
+		req.TotalAmount,
+		req.Description,
+		items,
+		userID,
+	)
+
+	if err != nil {
+		log.Printf("[INVOICE] Update invoice with items failed - Invoice ID: %d, User ID: %d, error: %v", idUint, userID, err)
+		statusCode, message := handleInvoiceError(err)
+		return helper.Fail(c, statusCode, message, err.Error())
+	}
+
+	log.Printf("[INVOICE] Update invoice with items successful - Invoice ID: %d, Updated by User ID: %d", idUint, userID)
+	return helper.Success(c, 200, "Invoice with items updated successfully", invoice)
 }
 
 func UpdateInvoice(c *fiber.Ctx) error {

@@ -62,6 +62,17 @@ type UpdatePurchaseOrderRequest struct {
 	Description *string  `json:"description"`
 }
 
+// UpdatePurchaseOrderWithItemsRequest is the request body for updating a purchase order with items
+type UpdatePurchaseOrderWithItemsRequest struct {
+	PONumber    string                     `json:"poNumber"`
+	UserID      uint                       `json:"userId"`
+	OrderDate   string                     `json:"orderDate"`
+	Status      string                     `json:"status"` // draft, submitted, approved, received, closed
+	TotalAmount *float64                   `json:"totalAmount"`
+	Description *string                    `json:"description"`
+	Items       []PurchaseOrderItemRequest `json:"items" validate:"required"`
+}
+
 // CreatePurchaseOrderWithItemsRequest is the request body for creating a purchase order with items
 type CreatePurchaseOrderWithItemsRequest struct {
 	PONumber    string                     `json:"poNumber" validate:"required"`
@@ -326,6 +337,72 @@ func UpdatePurchaseOrder(c *fiber.Ctx) error {
 
 	log.Printf("[PURCHASE_ORDER] Update purchase order successful - Order ID: %d, Updated by User ID: %d", idUint, userID)
 	return helper.Success(c, 200, "Purchase order updated successfully", order)
+}
+
+// UpdatePurchaseOrderWithItems updates a purchase order and replaces all its items in a transaction
+func UpdatePurchaseOrderWithItems(c *fiber.Ctx) error {
+	id := c.Params("id")
+	log.Printf("[PURCHASE_ORDER] Update purchase order with items request - ID: %s from IP: %s", id, c.IP())
+
+	idUint, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		log.Printf("[PURCHASE_ORDER] Update purchase order with items failed - Invalid ID: %s, error: %v", id, err)
+		return helper.Fail(c, 400, "Invalid purchase order ID", err.Error())
+	}
+
+	var req UpdatePurchaseOrderWithItemsRequest
+	if err := c.BodyParser(&req); err != nil {
+		log.Printf("[PURCHASE_ORDER] Update purchase order with items failed - Invalid request body for ID: %d, error: %v", idUint, err)
+		return helper.Fail(c, 400, "Invalid request body", err.Error())
+	}
+
+	// Validate items array
+	if len(req.Items) == 0 {
+		log.Printf("[PURCHASE_ORDER] Update purchase order with items failed - No items provided for ID: %d", idUint)
+		return helper.Fail(c, 400, "At least one item is required", "Items array is empty")
+	}
+
+	// Parse order date if provided
+	var orderDate time.Time
+	if req.OrderDate != "" {
+		orderDate, err = time.Parse("2006-01-02", req.OrderDate)
+		if err != nil {
+			log.Printf("[PURCHASE_ORDER] Update purchase order with items failed - Invalid order_date format: %s, error: %v", req.OrderDate, err)
+			return helper.Fail(c, 400, "Invalid order_date format, use YYYY-MM-DD", err.Error())
+		}
+	}
+
+	// Get user ID from JWT token
+	userID, ok := c.Locals("user_id").(uint)
+	if !ok {
+		log.Printf("[PURCHASE_ORDER] Update purchase order with items failed - User not authenticated for Order ID: %d", idUint)
+		return helper.Fail(c, 401, "User not authenticated", "Failed to get user ID from token")
+	}
+
+	// Convert request items to model items
+	items := make([]model.PurchaseOrderItem, len(req.Items))
+	for i, item := range req.Items {
+		items[i] = model.PurchaseOrderItem{
+			ProductID:   item.ProductID,
+			QtyOrdered:  &item.QtyOrdered,
+			UnitPrice:   &item.UnitPrice,
+			Discount:    item.Discount,
+			TotalPrice:  &item.TotalPrice,
+			Description: item.Description,
+		}
+	}
+
+	log.Printf("[PURCHASE_ORDER] Updating purchase order with %d items - Order ID: %d, User ID: %d", len(items), idUint, userID)
+
+	order, err := purchaseOrderService.UpdatePurchaseOrderWithItems(uint(idUint), req.PONumber, req.UserID, orderDate, req.Status, req.TotalAmount, req.Description, items, userID)
+	if err != nil {
+		log.Printf("[PURCHASE_ORDER] Update purchase order with items failed - Order ID: %d, User ID: %d, error: %v", idUint, userID, err)
+		statusCode, message := handlePurchaseOrderError(err)
+		return helper.Fail(c, statusCode, message, err.Error())
+	}
+
+	log.Printf("[PURCHASE_ORDER] Update purchase order with items successful - Order ID: %d, Updated by User ID: %d", idUint, userID)
+	return helper.Success(c, 200, "Purchase order with items updated successfully", order)
 }
 
 func DeletePurchaseOrder(c *fiber.Ctx) error {

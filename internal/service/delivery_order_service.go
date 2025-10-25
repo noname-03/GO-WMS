@@ -201,6 +201,98 @@ func (s *DeliveryOrderService) CreateDeliveryOrderWithItems(doNumber string, pur
 	return createdOrder, nil
 }
 
+// UpdateDeliveryOrderWithItems updates a delivery order and replaces all its items in a transaction
+func (s *DeliveryOrderService) UpdateDeliveryOrderWithItems(id uint, doNumber string, purchaseOrderID uint, deliveryDate time.Time, status string, description *string, items []model.DeliveryOrderItem, userID uint) (interface{}, error) {
+	if id == 0 {
+		return nil, errors.New("invalid delivery order ID")
+	}
+
+	if userID == 0 {
+		return nil, errors.New("user ID is required for audit trail")
+	}
+
+	// Check if delivery order exists
+	oldOrder, err := s.doRepo.GetDeliveryOrderModelByID(id)
+	if err != nil {
+		return nil, errors.New("delivery order not found")
+	}
+
+	// Validate status if provided
+	if status == "" {
+		status = oldOrder.Status // Use existing status if not provided
+	} else {
+		validStatuses := map[string]bool{
+			"draft":    true,
+			"shipped":  true,
+			"received": true,
+			"closed":   true,
+		}
+		if !validStatuses[status] {
+			return nil, errors.New("invalid status: must be one of draft, shipped, received, closed")
+		}
+	}
+
+	// If purchase order ID is being changed, check if new purchase order exists
+	if purchaseOrderID != 0 && purchaseOrderID != oldOrder.PurchaseOrderID {
+		poExists, err := s.doRepo.CheckPurchaseOrderExists(purchaseOrderID)
+		if err != nil {
+			return nil, err
+		}
+		if !poExists {
+			return nil, errors.New("purchase order not found")
+		}
+	} else if purchaseOrderID == 0 {
+		purchaseOrderID = oldOrder.PurchaseOrderID // Use existing PO if not provided
+	}
+
+	// Check DO number if changed
+	if doNumber != "" && doNumber != oldOrder.DONumber {
+		doExists, err := s.doRepo.CheckDONumberExists(doNumber)
+		if err != nil {
+			return nil, err
+		}
+		if doExists {
+			return nil, errors.New("DO number already exists")
+		}
+	} else if doNumber == "" {
+		doNumber = oldOrder.DONumber // Use existing DO number if not provided
+	}
+
+	// Validate items
+	if len(items) == 0 {
+		return nil, errors.New("at least one item is required")
+	}
+
+	// Set user_ins and user_updt for all items
+	for i := range items {
+		items[i].UserIns = &userID
+		items[i].UserUpdt = &userID
+	}
+
+	// Prepare update data
+	updateData := map[string]interface{}{
+		"do_number":         doNumber,
+		"purchase_order_id": purchaseOrderID,
+		"delivery_date":     deliveryDate,
+		"status":            status,
+		"description":       description,
+		"user_updt":         userID,
+	}
+
+	err = s.doRepo.UpdateDeliveryOrderWithItems(id, updateData, items)
+	if err != nil {
+		return nil, err
+	}
+
+	// Fetch the updated order with relationships
+	updatedOrder, err := s.doRepo.GetDeliveryOrderByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return updatedOrder, nil
+}
+
 func (s *DeliveryOrderService) UpdateDeliveryOrder(id uint, doNumber string, purchaseOrderID uint, deliveryDate time.Time, status string, description *string, userID uint) (interface{}, error) {
 	if id == 0 {
 		return nil, errors.New("invalid delivery order ID")

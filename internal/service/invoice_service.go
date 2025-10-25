@@ -202,6 +202,99 @@ func (s *InvoiceService) CreateInvoiceWithItems(
 	return s.repo.GetInvoiceByID(invoice.ID)
 }
 
+// UpdateInvoiceWithItems updates an invoice and replaces all its items in a transaction
+func (s *InvoiceService) UpdateInvoiceWithItems(
+	id uint,
+	invoiceNumber string,
+	userID uint,
+	purchaseOrderID *uint,
+	deliveryOrderID *uint,
+	invoiceDate time.Time,
+	status string,
+	totalAmount float64,
+	description *string,
+	items []model.InvoiceItem,
+	userUpdtID uint,
+) (interface{}, error) {
+	// Check if invoice exists
+	oldInvoice, err := s.repo.GetInvoiceModelByID(id)
+	if err != nil {
+		return nil, errors.New("invoice not found")
+	}
+
+	// Use existing values if not provided
+	if invoiceNumber == "" {
+		invoiceNumber = oldInvoice.InvoiceNumber
+	}
+	if userID == 0 {
+		userID = oldInvoice.UserID
+	}
+	if status == "" {
+		status = oldInvoice.Status
+	}
+
+	// Validate user exists
+	exists, err := s.repo.CheckUserExists(userID)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, errors.New("user not found")
+	}
+
+	// Validate purchase order if provided
+	if purchaseOrderID != nil {
+		exists, err := s.repo.CheckPurchaseOrderExists(*purchaseOrderID)
+		if err != nil {
+			return nil, err
+		}
+		if !exists {
+			return nil, errors.New("purchase order not found")
+		}
+	}
+
+	// Validate delivery order if provided
+	if deliveryOrderID != nil {
+		exists, err := s.repo.CheckDeliveryOrderExists(*deliveryOrderID)
+		if err != nil {
+			return nil, err
+		}
+		if !exists {
+			return nil, errors.New("delivery order not found")
+		}
+	}
+
+	// Validate items
+	if len(items) == 0 {
+		return nil, errors.New("at least one item is required")
+	}
+
+	// Set user_ins and user_updt for all items
+	for i := range items {
+		items[i].UserIns = userUpdtID
+		items[i].UserUpdt = userUpdtID
+	}
+
+	updateData := map[string]interface{}{
+		"invoice_number":    invoiceNumber,
+		"user_id":           userID,
+		"purchase_order_id": purchaseOrderID,
+		"delivery_order_id": deliveryOrderID,
+		"invoice_date":      invoiceDate,
+		"status":            status,
+		"total_amount":      totalAmount,
+		"description":       description,
+		"user_updt":         userUpdtID,
+	}
+
+	err = s.repo.UpdateInvoiceWithItems(id, updateData, items)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.repo.GetInvoiceByID(id)
+}
+
 func (s *InvoiceService) UpdateInvoice(
 	id uint,
 	invoiceNumber string,

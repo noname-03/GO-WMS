@@ -22,6 +22,7 @@ func RegisterInvoiceRoutes(api fiber.Router) {
 	invoices.Get("/:id", handler.GetInvoiceByID)
 	invoices.Post("/", handler.CreateInvoice)
 	invoices.Post("/with-items", handler.CreateInvoiceWithItems)
+	invoices.Put("/:id/with-items", handler.UpdateInvoiceWithItems)
 	invoices.Put("/:id", handler.UpdateInvoice)
 	invoices.Put("/:id/restore", handler.RestoreInvoice)
 	invoices.Delete("/:id", handler.DeleteInvoice)

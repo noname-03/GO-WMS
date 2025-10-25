@@ -175,6 +175,41 @@ func (r *DeliveryOrderRepository) CreateDeliveryOrderWithItems(order *model.Deli
 	return tx.Commit().Error
 }
 
+// UpdateDeliveryOrderWithItems updates a delivery order and replaces all its items in a transaction
+func (r *DeliveryOrderRepository) UpdateDeliveryOrderWithItems(id uint, order map[string]interface{}, items []model.DeliveryOrderItem) error {
+	tx := database.DB.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	// Update delivery order
+	if err := tx.Model(&model.DeliveryOrder{}).Where("id = ?", id).Updates(order).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Delete existing items (soft delete)
+	if err := tx.Where("delivery_order_id = ?", id).Delete(&model.DeliveryOrderItem{}).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Set delivery_order_id for all new items
+	for i := range items {
+		items[i].DeliveryOrderID = id
+	}
+
+	// Create new items
+	if len(items) > 0 {
+		if err := tx.Create(&items).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	return tx.Commit().Error
+}
+
 func (r *DeliveryOrderRepository) UpdateDeliveryOrder(id uint, updateData map[string]interface{}) error {
 	return database.DB.Model(&model.DeliveryOrder{}).Where("id = ?", id).Updates(updateData).Error
 }

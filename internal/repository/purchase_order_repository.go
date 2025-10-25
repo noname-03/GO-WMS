@@ -180,6 +180,41 @@ func (r *PurchaseOrderRepository) CreatePurchaseOrderWithItems(order *model.Purc
 	return tx.Commit().Error
 }
 
+// UpdatePurchaseOrderWithItems updates a purchase order and replaces all its items in a transaction
+func (r *PurchaseOrderRepository) UpdatePurchaseOrderWithItems(id uint, order map[string]interface{}, items []model.PurchaseOrderItem) error {
+	tx := database.DB.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	// Update purchase order
+	if err := tx.Model(&model.PurchaseOrder{}).Where("id = ?", id).Updates(order).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Delete existing items (soft delete)
+	if err := tx.Where("purchase_order_id = ?", id).Delete(&model.PurchaseOrderItem{}).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Set purchase_order_id for all new items
+	for i := range items {
+		items[i].PurchaseOrderID = id
+	}
+
+	// Create new items
+	if len(items) > 0 {
+		if err := tx.Create(&items).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	return tx.Commit().Error
+}
+
 func (r *PurchaseOrderRepository) UpdatePurchaseOrder(id uint, updateData map[string]interface{}) error {
 	return database.DB.Model(&model.PurchaseOrder{}).Where("id = ?", id).Updates(updateData).Error
 }
